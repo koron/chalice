@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 08-Nov-2004.
+" Last Change: 11-Dec-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -3455,11 +3455,23 @@ function! s:DoWriteBufferStub(flag)
     let retval = 0
     let show_resfile = 1
     let error_msg = s:msg_error_writehighload
-  elseif rescode !=# 'true' && getline(1) !~ '書きこみました'
-    " 書き込み成功ではない場合
-    let retval = 0
-    let show_resfile = 1
-    let error_msg = s:msg_error_writenottrue
+  else
+    let is_error = 1
+    if is_error == 1 && rescode ==? 'true'
+      is_error = 0
+    endif
+    if is_error == 1 && getline(1) =~ '書きこみました'
+      is_error = 0
+    endif
+    if is_error == 1 && search('<title>書きこみました。</title>', 'w') > 0
+      is_error = 0
+    endif
+    if is_error != 0
+      " 書き込み成功ではない場合
+      let retval = 0
+      let show_resfile = 1
+      let error_msg = s:msg_error_writenottrue
+    endif
   endif
   " 結果ファイルをHTMLで表示
   if show_resfile
