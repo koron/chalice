@@ -2,10 +2,10 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 07-Jul-2002.
+" Last Change: 27-Jul-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
-let s:version_serial = 108
+let s:version_serial = 111
 if exists('g:plugin_alice_disable') || (exists('g:version_alice') && g:version_alice > s:version_serial)
   finish
 endif
@@ -13,6 +13,25 @@ let g:version_alice = s:version_serial
 
 "------------------------------------------------------------------------------
 " ALICE
+
+function! AL_string_multiplication(base, scalar)
+  " Like perl's 'x' operator
+  let retval = ''
+  let base = a:base
+  let scalar = a:scalar
+  while scalar
+    if scalar % 2
+      let retval = retval . base
+    endif
+    let scalar = scalar / 2
+    let base = base . base
+  endwhile
+  return retval
+endfunction
+
+function! AL_sscan(string, pattern, select)
+  return substitute(matchstr(a:string, a:pattern), a:pattern, a:select, '')
+endfunction
 
 function! AL_compareversion(ver1, ver2)
   " Compare version strings a:ver1 and a:ver2.  If a:ver2 indicate more
@@ -84,7 +103,7 @@ function! AL_hascmd(cmd)
   let cmdpath = globpath(path, cmd)
   if has('win32') && cmdpath == ''
     let retval = globpath($VIM, cmd)
-  else
+  elseif cmdpath != ''
     let retval = cmd
   endif
   " Revert 'wildignore'
@@ -147,16 +166,21 @@ function! AL_open_url(url, cmd)
   let url = AL_verifyurl(a:url)
 
   if a:cmd != ''
-    " Avoid that '&' is replaced by '%URL%'.
-    " Avoid that '~' is replaced by previous replace string.
     let url = AL_quote(url)
     if a:cmd =~ '%URL%'
+      " Avoid that '&' is replaced by '%URL%'.
+      " Avoid that '~' is replaced by previous replace string.
       let url = escape(url, '&~\\')
       let excmd = substitute(a:cmd, '%URL%', url, 'g')
     else
       let excmd = a:cmd . ' ' . url
     endif
-    call AL_system(excmd)
+    if excmd !~ '^!'
+      call AL_system(excmd)
+    else
+      let url = escape(url, '%#')
+      call AL_execute(excmd)
+    endif
     let retval = 1
   elseif has('win32')
     " If 'url' has % or #, all of those characters are expanded to buffer
@@ -173,7 +197,7 @@ function! AL_open_url(url, cmd)
     let retval = 1
   elseif has('mac')
     " Use osascript for MacOS X
-    call system("osascript -e 'open location \"" .url. "\"'")
+    call AL_system("osascript -e 'open location \"" .url. "\"'")
     let retval = 1
   endif
   return retval

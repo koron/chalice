@@ -2,7 +2,7 @@
 "
 " datutil.vim
 "
-" Last Change: 06-Jul-2002.
+" Last Change: 14-Jul-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -17,6 +17,20 @@ let s:debug = 1
 
 "------------------------------------------------------------------------------
 " IMPEMENTATION POINT:
+
+function! s:GetMx(linestr, ...)
+  let flags = a:0 > 0 ? a:1 : ''
+  if AL_hasflag(flags, '2ch') || a:linestr =~ s:GetMx_bbs2ch()
+    let s:mx_article = s:GetMx_bbs2ch()
+    return '2ch'
+  elseif AL_hasflag(flags, 'modoki') || a:linestr =~ s:GetMx_bbsmodoki()
+    let s:mx_article = s:GetMx_bbsmodoki()
+    return 'modoki'
+  else
+    let s:mx_article = s:GetMx_bbs2ch()
+    return '2ch'
+  endif
+endfunction
 
 function! s:GetMx_bbs2ch()
   " 2chスレッド、フォーマットパターン
@@ -67,15 +81,7 @@ endfunction
 function! DatLine2Text(artnum, datline, ...)
   let inval = a:artnum.'<>'.a:datline
   let flags = a:0 > 0 ? a:1 : ''
-  let format = '2ch'
-  if AL_hasflag(flags, '2ch') || inval =~ s:GetMx_bbs2ch()
-    let s:mx_article = s:GetMx_bbs2ch()
-  elseif AL_hasflag(flags, 'modoki') || inval =~ s:GetMx_bbsmodoki()
-    let s:mx_article = s:GetMx_bbsmodoki()
-    let format = 'modoki'
-  else
-    let s:mx_article = s:GetMx_bbs2ch()
-  endif
+  let format = s:GetMx(inval, flags)
   let retval = s:FormatArticle(inval, format)
   return AL_decode_entityreference(retval)
 endfunction
@@ -86,16 +92,7 @@ function! Dat2Text(...)
   let s:dat2text_verbose = AL_hasflag(flags, 'verbose') ? 1 : 0
   " スレッドフォーマットパターンを決定
   let firstline = '0<>' . getline(1)
-  if firstline =~ s:GetMx_bbs2ch()
-    let s:mx_article = s:GetMx_bbs2ch()
-    let b:datutil_format = '2ch'
-  elseif firstline =~ s:GetMx_bbsmodoki()
-    let s:mx_article = s:GetMx_bbsmodoki()
-    let b:datutil_format = 'modoki'
-  else
-    let s:mx_article = s:GetMx_bbs2ch()
-    let b:datutil_format = 'default'
-  endif
+  let b:datutil_format = s:GetMx(firstline)
 
   " 後で表示位置を調整するため
   let curline = line('.')
@@ -136,6 +133,131 @@ function! Dat2Text(...)
   redraw!
 
   return b:datutil_title
+endfunction
+
+function! DatLine2HTML(artnum, datline)
+  let inval = a:artnum.'<>'.a:datline
+  let format = s:GetMx(inval)
+
+  " HTML化に必要な諸要素を取り出す
+  let numb = substitute(inval, s:mx_article, '\1', '')
+  let name = substitute(inval, s:mx_article, '\2', '')
+  let mail = substitute(inval, s:mx_article, '\3', '')
+  let date = substitute(inval, s:mx_article, '\4', '')
+  let cont = substitute(inval, s:mx_article, '\5', '')
+  let retval = ''
+
+  " 各要素の整形
+  let name = '<b>'.name.'</b>'
+  let cont = substitute(cont, '\(\%(https\?\|ftp\)://'.g:AL_pattern_class_url.'\+\)', '<a href="\1">\1</a>', 'g')
+
+  " HTMLとして整形
+  let retval = retval.'<dt>'.numb.'&nbsp;:&nbsp;'
+  if mail != ''
+    let retval = retval.'<a href="mailto:'.mail.'">'.name.'</a>'
+  else
+    let retval = retval.'<font color="green">'.name.'</font>'
+  endif
+  let retval = retval.'&nbsp;:&nbsp;'.date
+  let retval = retval.'</dt>'
+  let retval = retval.'<dd>'.cont.'</dd>'
+
+  if format ==# 'modoki'
+    let retval = substitute(retval, '＠｀', ',', 'g')
+  endif
+  return retval
+endfunction
+
+function! Dat2HTML(dat, startnum, endnum, url_base, url_board)
+  " datから各記事のHTMLを生成
+  if !filereadable(a:dat)
+    return ''
+  endif
+  let startnum = a:startnum
+  let endnum = a:endnum
+
+  call AL_execute('vertical 1sview '.a:dat)
+  " タイトルの取得
+  let firstline = '0<>'.getline(1)
+  let format = s:GetMx(firstline)
+  let title = AL_decode_entityreference(substitute(firstline, s:mx_article, '\6', ''))
+  " 表示範囲指定の検証
+  let artnum = line('$')
+  if startnum < 1
+    let startnum = 1
+  elseif startnum > artnum
+    let startnum = artnum
+  endif
+  if endnum < startnum
+    let endnum = startnum
+  elseif endnum > artnum
+    let endnum = artnum
+  endif
+
+  " スレコンテンツ部分のHTMLを作成
+  let contents = ''
+  let i = startnum
+  while i <= endnum
+    let contents = contents.DatLine2HTML(i, getline(i))."\n"
+    let i = i + 1
+  endwhile
+  silent! bwipeout!
+
+  " HTML作成
+  let retval = ''
+  " HTMLヘッダ
+  let retval = retval.'<html>'."\n"
+  let retval = retval.'<head>'."\n"
+  if a:url_base != ''
+    let retval = retval.'<base href="'.a:url_base.'">'."\n"
+  endif
+  let retval = retval.'<title>'.title.'</title>'."\n"
+  let retval = retval.'</head>'."\n"
+  let retval = retval.'<body bgcolor="#efefef" text="black" link="blue" alink="red" vlink="#660099">'."\n"
+  " リンク(絶対位置指定)
+  if a:url_board != ''
+    let retval = retval.'<a href="'.a:url_board.'">■掲示板に戻る■</a>'."\n"
+  endif
+  let retval = retval.'<a href="./">全部</a>'."\n"
+  let i = 1
+  while i < artnum
+    let url_num = (i != 1 ? i : '').'-'.(i + 99)
+    let retval = retval.'<a href="'.url_num.'">'.i.'-</a>'."\n"
+    let i = i + 100
+  endwhile
+  let retval = retval.'<a href="l50">最新50</a>'."\n"
+  " スレタイ
+  let retval = retval.'<p><font size="+1" color="red">'.title.'</font></p>'."\n"
+  " スレ内容
+  let retval = retval.'<dl>'."\n"
+  let contents = substitute(contents, '<a[^>]\{-\}>\(&gt;&gt;\(\d\+\)\)</a>', '<a href="\2" target="_blank">\1</a>', 'g')
+  let retval = retval.contents
+  let retval = retval.'</dl>'."\n"
+  " dat情報表示
+  let retval = retval.'<font color="red" face="Arial"><b>'.(getfsize(a:dat)/1024).'&nbsp;KB&nbsp;(#'.artnum.')</b></font>'."\n"
+  " 広告
+  let retval = retval.'<font size="2"><b>&nbsp;[&nbsp;Chalice及びVimについての情報は&nbsp;<a href="http://www.kaoriya.net/" target="_blank">KaoriYa.net</a>&nbsp;]</b></font>'."\n"
+  " リンク(論理位置指定)
+  let retval = retval.'<hr /><center>'."\n"
+  let retval = retval.'<a href="'.(endnum+1).'-">続きを見る</a>'."\n"
+  let retval = retval.'<a href="'.artnum.'-">新着レスの表示</a>'."\n"
+  let retval = retval.'</center>'."\n"
+  " リンク(相対位置指定)
+  let retval = retval.'<hr />'."\n"
+  if startnum > 1
+    let url_num = (endnum > 100 ? endnum - 100 : 1).'-'.(endnum - 1)
+    let retval = retval.'<a href="'.url_num.'">前100</a>'."\n"
+  endif
+  if endnum < artnum
+    let url_num = (endnum + 1).'-'.(endnum < (artnum - 100) ? endnum + 100 : artnum)
+    let retval = retval.'<a href="'.url_num.'">次100</a>'."\n"
+  endif
+  let retval = retval.'<a href="l50">最新50</a>'."\n"
+  " HTMLフッタ
+  let retval = retval.'</body>'."\n"
+  let retval = retval.'</html>'."\n"
+
+  return retval
 endfunction
 
 if s:debug

@@ -1,4 +1,4 @@
-*chalice.txt*	www.2ch.net browser.  Last Change: 07-Jul-2002.
+*chalice.txt*	www.2ch.net browser.  Last Change: 14-Jul-2002.
 
 
 		Chalice 取扱説明書    by MURAOKA Taro (KoRoN)
@@ -276,6 +276,8 @@ p			1画面スクロールアップ
 <C-P><C-X>		自動プレビュー機能をオン／オフする
 
 <,>			前/次の記事へ移動(, と .も同じ意味)
+
+&			カーソル行の記事をHTML化してブラウズ(AA)
 
 #			記事番号を指定して移動
 

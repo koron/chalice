@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 20-Jun-2002.
+" Last Change: 13-Jul-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -48,6 +48,7 @@ nnoremap <silent> <buffer> ,		:ChaliceGoArticle prev<CR>
 nnoremap <silent> <buffer> >		:ChaliceGoArticle next<CR>
 nnoremap <silent> <buffer> .		:ChaliceGoArticle next<CR>
 nnoremap <buffer> #			:ChaliceGoArticle input<CR>
+nnoremap <silent> <buffer> &		:Chalice2HTML<CR>
 
 nnoremap <silent> <buffer> i		:ChaliceWrite<CR>
 nnoremap <silent> <buffer> I		:ChaliceWrite sage<CR>

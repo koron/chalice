@@ -2,11 +2,11 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 07-Jul-2002.
+" Last Change: 06-Aug-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
-let s:version = '1.5'
+let s:version = '1.6'
 
 " 使い方
 "   chaliceディレクトリを'runtimepath'に通してからVimを起動して:Chaliceを実行
@@ -150,7 +150,7 @@ if !exists('g:chalice_noquery_write')
   let g:chalice_noquery_write = 0
 endif
 
-" 起動時の状態を設定する(bookmark,offline,nohelp)
+" 起動時の状態を設定する(bookmark,offline,nohelp,noanime)
 if !exists('g:chalice_startupflags')
   let g:chalice_startupflags = ''
 endif
@@ -180,6 +180,10 @@ if !exists('g:chalice_autonumcheck')
   let g:chalice_autonumcheck = 0
 endif
 
+" アニメーション時のウェイト。最適な値はCPUや表示装置に依存
+if !exists('g:chalice_animewait')
+  let g:chalice_animewait = 200
+endif
 
 "------------------------------------------------------------------------------
 " 定数値
@@ -214,7 +218,7 @@ let s:msg_wait_download = 'ダウンロード中...'
 let s:msg_error_nocurl = 'Chaliceには正しくインストールされたcURLが必要です.'
 let s:msg_error_nogzip = 'Chaliceには正しくインストールされたgzipが必要です.'
 let s:msg_error_noconv = 'Chaliceを非CP932環境で利用するには qkc もしくは nkf が必要です.'
-let s:msg_error_cantjump = 'カーソルの行にアンカーはありません. 鬱氏'
+let s:msg_error_cantjump = 'カーソルの行にアンカーはありません. 髭氏'
 let s:msg_error_cantpreview = 'アンカーが無効です. 鬱氏'
 let s:msg_error_appendnothread = 'ゴルァ!! スレッドがないYO!!'
 let s:msg_error_creatnoboard = '板を指定しないと糞スレすらも建ちません'
@@ -230,13 +234,15 @@ let s:msg_error_nocachedir = 'キャッシュディレクトリを作成出来ません.'
 let s:msg_error_nothread = 'スレッドが存在しないか, 倉庫入り(HTML化)待ちです.'
 let s:msg_error_accesshere = '下記URLに外部ブラウザでアクセスしてみてください.'
 let s:msg_error_newversion = 'Chaliceの新しいバージョン・パッチがリリースされています.'
+let s:msg_error_htmlnotopen = 'スレッドが開かれていません.'
+let s:msg_error_htmlnodat = 'スレッドのdatがありません.'
 let s:msg_thread_hasnewarticles = '新しい書き込みがあります.'
 let s:msg_thread_nonewarticle = '新たな書き込みはありません'
 let s:msg_thread_dead = '倉庫に落ちたかHTML化待ちとオモワレ.'
 let s:msg_thread_lost = '倉庫に落ちました.'
 let s:msg_thread_unknown = '初めて見るスレです. 更新チェックはできません.'
 let s:msg_chalice_quit = 'Chalice ～～～～～～～～終了～～～～～～～～'
-let s:msg_chalice_start = 'Chalice キボンヌ'
+let s:msg_chalice_start = 'Chalice キノーン'
 " 1行ヘルプ
 let s:msg_help_boardlist = '(板一覧)  <CR>:板決定  j/k:板選択  h/l:カテゴリ閉/開  R:更新'
 let s:msg_help_threadlist = '(スレ一覧)  <CR>:スレ決定 j/k:スレ選択  d:dat削除  R:更新'
@@ -268,9 +274,6 @@ let s:buftitle_threadlist = 'Chalice_2ちゃんねる_スレ一覧'
 let s:buftitle_thread	  = 'Chalice_2ちゃんねる_スレッド'
 let s:buftitle_write	  = 'Chalice_2ちゃんねる_書き込み'
 let s:buftitle_preview	  = 'Chalice_2ちゃんねる_プレビュー'
-" 書き込み時の文字コード問題を避けるため定文字列
-let s:urlencoded_write = '%8F%91%82%AB%8D%9E%82%DE' " 書き込み
-let s:urlencoded_newwrite = '%90V%8BK%83X%83%8C%83b%83h%8D%EC%90%AC' " 新スレ
 " ブックマーク自動バックアップ間隔の下限
 let s:minimum_backupinterval = 3600
 let s:bookmark_filename = 'chalice.bmk'
@@ -305,8 +308,12 @@ let s:mx_thread_dat = '^[ !\*+x] \(.\+\) (\(\%(\%(\d\+\|???\)/\)\?\d\+\)).*\t\+\
 let s:mx_anchor_num = '>>\(\(\d\+\)\%(-\(\d\+\)\)\?\)'
 let s:mx_anchor_url = '\(\(h\?ttps\?\|ftp\)://'.g:AL_pattern_class_url.'\+\)'
 let s:mx_anchor_www = 'www'.g:AL_pattern_class_url.'\+'
-let s:mx_oldkako_servers = '^\(piza\.\|www\.bbspink\|mentai\.2ch\.net/mukashi\|www\.2ch\.net/\%(tako\|kitanet\)\)'
 let s:mx_url_2channel = 'http://\(..\{-\}\)/test/read.cgi\(/[^/]\+\)/\(\d\+\%(_\d\+\)\?\)\(.*\)'
+let s:mx_servers_oldkako = '^\(piza\.\|www\.bbspink\|mentai\.2ch\.net/mukashi\|www\.2ch\.net/\%(tako\|kitanet\)\)'
+let s:mx_servers_jbbstype = '\%(^jbbs\.shitaraba\.com\|machibbs\.com$\|jbbs\.net\)'
+let s:mx_servers_shitaraba = '^www\.shitaraba\.com$'
+let s:mx_servers_machibbs = 'machibbs.com$'
+let s:mx_servers_euc = '\%(jbbs\.net\|shitaraba\.com\)'
 
 " コマンドの設定
 command! Chalice			call <SID>ChaliceOpen()
@@ -339,6 +346,56 @@ endfunction
 " DEVELOPING FUNCTIONS
 " 開発途上関数
 
+" 起動AA表示
+function! s:StartupAA(filename, wait)
+  if !filereadable(a:filename)
+    return 0
+  endif
+  call s:GoBuf_Thread()
+  let oldline = line('.')
+  silent! execute 'read '.a:filename
+  " アニメーション
+  if a:wait >= 0
+    " 初期化
+    let spnum = 70
+    let spstr = AL_string_multiplication(' ', spnum)
+    let save_hlsearch = &hlsearch
+    let save_wrap = &wrap
+    set nohlsearch
+    set nowrap
+    silent! execute '%s/^        /&'.spstr.'/'
+    redraw
+    " アニメーションループ
+    let i = 0
+    while i < spnum
+      silent! %s/^        /       /
+      redraw
+      let wait = a:wait
+      while wait > 0
+	let wait = wait - 1
+      endwhile
+      let i = i + 1
+    endwhile
+    " 後片付け
+    let @/ = ''
+    let &hlsearch = save_hlsearch
+    let &wrap = save_wrap
+  endif
+  execute oldline
+  return 1
+endfunction
+
+function! s:AdjustWindowSize(dirwidth, listheight)
+  let winnum = winnr()
+  if s:GoBuf_BoardList() >= 0
+    execute a:dirwidth.' wincmd |'
+  endif
+  if s:GoBuf_ThreadList() >= 0
+    execute a:listheight.' wincmd _'
+  endif
+  execute winnum.' wincmd w'
+endfunction
+
 function! s:CheckNewVersion(verurl, verpath, vercache, ...)
   if !filereadable(a:verpath)
     return 0
@@ -358,10 +415,10 @@ function! s:CheckNewVersion(verurl, verpath, vercache, ...)
 
   " 各バージョン番号をファイルから読み取る
   call AL_execute('vertical 1sview '.a:verpath)
-  setlocal bufhidden
+  setlocal bufhidden=delete
   let verold = getline(1)
   call AL_execute('view '.a:vercache)
-  setlocal bufhidden
+  setlocal bufhidden=delete
   let vernew = getline(1)
   silent! bwipeout!
 
@@ -404,7 +461,7 @@ function! s:Cruise(flags)
       if foldclosed(line('.')) > 0
 	normal! zv
       endif
-      if !s:Parse2chURL(matchstr(getline('.'), s:mx_anchor_url))
+      if !s:ParseURL(matchstr(getline('.'), s:mx_anchor_url))
 	call s:NextLine()
       else
 	" エントリーがスレッドなら新着チェック
@@ -412,7 +469,7 @@ function! s:Cruise(flags)
 	" Hotlink表示
 	call AL_execute('match DiffAdd /^.*\%'.line('.').'l.*$/')
 	" スレ読み込み。ifmodifiedが肝。
-	let retval = s:UpdateThread('', s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat . '.dat', 'continue,ifmodified')
+	let retval = s:UpdateThread('', s:parseurl_host, s:parseurl_board, s:parseurl_dat, 'continue,ifmodified')
 	call s:GoBuf_ThreadList()
 	if retval > 0
 	  " 更新があった場合
@@ -556,9 +613,9 @@ function! s:HandleURL(url, flag)
     " 強制的に外部ブラウザを使用するように指定された
     call s:OpenURL(a:url)
     return 2
-  elseif !s:Parse2chURL(a:url)
+  elseif !s:ParseURL(a:url)
+    " Chaliceで取り扱えるURLではない時
     let oldbuf = bufname('%')
-    " URLが2chではない時
     call s:GoBuf_BoardList()
     if search(a:url) != 0
       normal! zO0z.
@@ -577,34 +634,34 @@ function! s:HandleURL(url, flag)
       call s:ClosePreview()
     endif
 
-    " URLが2chと判断される時
-    "	s:parse2ch_host, s:parse2ch_board, s:parse2ch_datはParse2chURL()内で
-    "	設定される暗黙的な戻り値。
-    let curarticle = s:UpdateThread('', s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat . '.dat', 'continue')
+    " Chaliceで取り扱えるURLの時
+    "	s:parseurl_host, s:parseurl_board, s:parseurl_datは
+    "	ParseURL()内で設定される暗黙的な戻り値。
+    let curarticle = s:UpdateThread('', s:parseurl_host, s:parseurl_board, s:parseurl_dat, 'continue')
 
-    if s:parse2ch_range_mode =~ 'r'
-      if s:parse2ch_range_mode !~ 'l'
+    if s:parseurl_range_mode =~ 'r'
+      if s:parseurl_range_mode !~ 'l'
 	" 非リストモード
 	" 表示範囲後のfolding
-	if s:parse2ch_range_end != '$'
-	  let fold_start = s:GetLnum_Article(s:parse2ch_range_end + 1)  - 1
+	if s:parseurl_range_end != '$'
+	  let fold_start = s:GetLnum_Article(s:parseurl_range_end + 1)  - 1
 	  if 0 < fold_start
 	    call AL_execute(fold_start . ',$fold')
 	  endif
 	endif
 	" 表示範囲前のfolding
-	if s:parse2ch_range_start > 1
-	  let fold_start = s:GetLnum_Article(s:parse2ch_range_mode =~ 'n' ? 1 : 2) - 1
-	  let fold_end = s:GetLnum_Article(s:parse2ch_range_start) - 2
+	if s:parseurl_range_start > 1
+	  let fold_start = s:GetLnum_Article(s:parseurl_range_mode =~ 'n' ? 1 : 2) - 1
+	  let fold_end = s:GetLnum_Article(s:parseurl_range_start) - 2
 	  if 0 < fold_start && fold_start < fold_end
 	    call AL_execute(fold_start . ',' . fold_end . 'fold')
 	  endif
 	endif
-	call s:GoThread_Article(s:parse2ch_range_start)
+	call s:GoThread_Article(s:parseurl_range_start)
       else
 	" リストモード('l')
-	let fold_start = s:GetLnum_Article(s:parse2ch_range_mode =~ 'n' ? 1 : 2) - 1
-	let fold_end = s:GetLnum_Article(s:GetThreadLastNumber() - s:parse2ch_range_start + (s:parse2ch_range_mode =~ 'n' ? 1 : 2)) - 2
+	let fold_start = s:GetLnum_Article(s:parseurl_range_mode =~ 'n' ? 1 : 2) - 1
+	let fold_end = s:GetLnum_Article(s:GetThreadLastNumber() - s:parseurl_range_start + (s:parseurl_range_mode =~ 'n' ? 1 : 2)) - 2
 	if 0 < fold_start && fold_start < fold_end
 	  call AL_execute(fold_start . ',' . fold_end . 'fold')
 	endif
@@ -710,27 +767,22 @@ function! s:HandleJump(flag)
   endif
 endfunction
 
-"
-" スレッドの更新を行なう
-"   ifmodifiedを指定した場合には、スレに更新がなかった際にスレは表示せずに-1
-"   を返す。通常はスレの取得した分の先頭記事番号を返す。
-"
-function! s:UpdateThread(title, host, board, dat, flags)
-  call s:GoBuf_Thread()
-  if a:title != ''
-    " スレのタイトルをバッファ名に設定
-    let b:title = s:prefix_thread . a:title
-    let b:title_raw = a:title
+function! s:UpdateThreadInfo(host, board, dat)
+  if g:chalice_threadinfo
+    call s:GoBuf_ThreadList()
+    if !exists('b:host') || !exists('b:board')
+      return
+    endif
+    if b:host . b:board ==# a:host . a:board
+      if a:dat != '' && search(a:dat, 'w')
+	call s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
+      endif
+    endif
+    call s:GoBuf_Thread()
   endif
-  " バッファ変数のhost,board,datを引数から作成(コピーだけどね)
-  let host  = a:host  != '' ? a:host  : b:host
-  let board = a:board != '' ? a:board : b:board
-  let dat   = a:dat   != '' ? a:dat   : b:dat
-  if host == '' || board == '' || dat == ''
-    " TODO: 何かエラー処理が欲しい
-    return -1
-  endif
+endfunction
 
+function! s:DatCatchup_2ch(host, board, dat, flags)
   let local = ''
   let prevsize = 0
   let oldarticle = 0
@@ -740,9 +792,9 @@ function! s:UpdateThread(title, host, board, dat, flags)
   "   3. HTTP返答コードをチェックし、スレが存命なら以下はスルー
   "   4. 倉庫入りしていたら、kako_dat_*として全体を取得する
   "   5. (未定)元のdat_*は捨てるか放置
-  let remote = board . '/dat/' . dat
-  let local_dat  = s:GenerateLocalDat(host, board, dat)
-  let local_kako = s:GenerateLocalKako(host, board, dat)
+  let remote = a:board . '/dat/' . a:dat
+  let local_dat  = s:GenerateLocalDat(a:host, a:board, a:dat)
+  let local_kako = s:GenerateLocalKako(a:host, a:board, a:dat)
   if filereadable(local_kako)
     " 手順1
     let local = local_kako
@@ -762,20 +814,12 @@ function! s:UpdateThread(title, host, board, dat, flags)
     endif
     " 手順2
     let didntexist = filereadable(local_dat) ? 0 : 1
-    let result = s:HttpDownload(host, remote, local_dat, a:flags)
+    let result = s:HttpDownload(a:host, remote, local_dat, a:flags)
     if result < 300 || result == 304 || result == 416
       " 手順3
       let local = local_dat
       " (必要ならば)スレ一覧のスレ情報を更新
-      if g:chalice_threadinfo
-	call s:GoBuf_ThreadList()
-	if host . board ==# a:host . a:board
-	  if a:dat != '' && search(a:dat, 'w')
-	    call s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
-	  endif
-	endif
-	call s:GoBuf_Thread()
-      endif
+      call s:UpdateThreadInfo(a:host, a:board, a:dat)
       " TODO: 416の時は2通りの可能性がある。あぼーん発生で本当に範囲外を指定
       " したのか、Apacheが新しい場合は差分が存在しない時。後者については古い
       " Apacheが200を返すのが間違っている。…本当はあぼーん検出に使いたかっ
@@ -795,7 +839,7 @@ function! s:UpdateThread(title, host, board, dat, flags)
 	endif
 	let remote = a:board.'/kako/'.remote.'/'.a:dat
 	" 旧形式の過去ログサーバではログは圧縮されない
-	if a:host.a:board !~ s:mx_oldkako_servers
+	if a:host.a:board !~ s:mx_servers_oldkako
 	  let remote = remote.'.gz'
 	  let local_kako = local_kako.'.gz'
 	endif
@@ -823,11 +867,14 @@ function! s:UpdateThread(title, host, board, dat, flags)
     call setline(1, 'Error: '.s:msg_error_nothread)
     call append('$', 'Error: '.s:msg_error_accesshere)
     call append('$', '')
-    call append('$', '  http://'.host.'/test/read.cgi'.board.'/'. substitute(dat, '\.dat$', '', '') )
+    call append('$', '  '.s:GenerateOpenURL(a:host, a:board, a:dat))
+    let b:host = a:host
+    let b:board = a:board
+    let b:dat = a:dat
     let b:title = s:prefix_thread
     let b:title_raw = ''
     normal! G^
-    return
+    return 0
   endif
 
   let b:datutil_datsize = getfsize(local)
@@ -842,8 +889,53 @@ function! s:UpdateThread(title, host, board, dat, flags)
     endif
   endif
 
+  " 不本意なグローバル(バッファ)変数の使用
+  let b:chalice_local = local
+  return oldarticle + 1
+endfunction
+
+"
+" スレッドの更新を行なう
+"   ifmodifiedを指定した場合には、スレに更新がなかった際にスレは表示せずに-1
+"   を返す。通常はスレの取得した分の先頭記事番号を返す。
+"
+function! s:UpdateThread(title, host, board, dat, flags)
+  call s:GoBuf_Thread()
+  if a:title != ''
+    " スレのタイトルをバッファ名に設定
+    let b:title = s:prefix_thread . a:title
+    let b:title_raw = a:title
+  endif
+  " バッファ変数のhost,board,datを引数から作成(コピーだけどね)
+  let host  = a:host  != '' ? a:host  : b:host
+  let board = a:board != '' ? a:board : b:board
+  let dat   = a:dat   != '' ? a:dat   : b:dat
+  if host == '' || board == '' || dat == ''
+    " TODO: 何かエラー処理が欲しい
+    return -1
+  endif
+
+  " datファイルを更新する
+  if host =~ s:mx_servers_jbbstype
+    let dat = substitute(dat, '\.dat$', '.cgi', '')
+    let newarticle = s:DatCatchup_JBBS(a:title, host, board, dat, a:flags)
+  else
+    let newarticle = s:DatCatchup_2ch(host, board, dat, a:flags)
+  endif
+  " 使用したdatファイル名を取得する
+  if exists('b:chalice_local')
+    let local = b:chalice_local
+    unlet! b:chalice_local
+  else
+    let local = ''
+  endif
+
+  " エラーの場合は終了
+  if newarticle <= 0
+    return newarticle
+  endif
+
   " スレッドをバッファにロードして整形
-  let newarticle = oldarticle + 1
   if 1 && (!AL_hasflag(a:flags, 'continue') || a:host != '' || a:board != '' || a:dat != '')
     " 開くべきスレ(URL)が異なっているので、バッファ変数へ格納
     let b:host = host
@@ -856,24 +948,7 @@ function! s:UpdateThread(title, host, board, dat, flags)
     let b:title_raw = title
   else
     " 差分整形
-    call AL_execute('vertical 1sview '.local)
-    " 整形作業
-    let contents = ''
-    let i = newarticle
-    let lastnum = line('$')
-    while i <= lastnum
-      let contents =  contents ."\r". DatLine2Text(i, getline(i))
-      let i = i + 1
-    endwhile
-    silent! bwipeout!
-    " スレバッファへ挿入
-    let save_reg = @"
-    let @" = substitute(contents, "\r", "\<NL>", 'g')
-    call s:GoBuf_Thread()
-    normal! G$p
-    let @" = save_reg
-    " 最終記事番号を保存
-    let b:chalice_lastnum = lastnum
+    call s:FormatThreadDiff(local, newarticle)
   endif
 
   if !s:GoThread_Article(newarticle)
@@ -881,6 +956,8 @@ function! s:UpdateThread(title, host, board, dat, flags)
   endif
   call s:Redraw('force')
   call s:EchoH('WarningMsg', s:msg_help_thread)
+  " 'nostartofline'対策
+  normal! 0
   return newarticle
 endfunction
 
@@ -985,7 +1062,7 @@ function! s:Redraw(opts)
   endif
   let cmd = 'redraw'
   if AL_hasflag(a:opts, 'force')
-    let cmd = cmd . '!'
+    "let cmd = cmd . '!'
   endif
   if AL_hasflag(a:opts, 'silent')
     let cmd = 'silent! ' . cmd
@@ -1120,7 +1197,7 @@ function! s:CheckEnvironment()
   if &encoding != 'cp932'
     if AL_hascmd('qkc') != ''
       let s:cmd_conv = 'qkc -e -u'
-    elseif AL_hascmd('nkf')
+    elseif AL_hascmd('nkf') != ''
       let s:cmd_conv = 'nkf -e'
     else
       call s:EchoH('ErrorMsg', s:msg_error_noconv)
@@ -1267,6 +1344,7 @@ function! s:ChaliceOpen()
   " 起動最終準備
   call s:CommandRegister()
   call s:OpenAllChaliceBuffers()
+  call s:AdjustWindowSize(15, 10)
 
   " あらゆるネットアクセスの前にオフラインモードフラグを設定
   let s:dont_download = AL_hasflag(g:chalice_startupflags, 'offline') ? 1 : 0
@@ -1275,7 +1353,7 @@ function! s:ChaliceOpen()
 
   " バージョンチェック
   if 1
-    let ver_cache = s:dir_cache.'/VERSION'
+    let ver_cache = s:dir_cache.'VERSION'
     if 0 < s:CheckNewVersion(s:verchk_verurl, s:verchk_path, ver_cache, s:verchk_interval)
       call s:GoBuf_Thread()
       call AL_buffer_clear()
@@ -1294,9 +1372,23 @@ function! s:ChaliceOpen()
   if AL_hasflag(g:chalice_startupflags, 'bookmark')
     silent! call s:OpenBookmark()
   endif
-  call s:UpdateTitleString()
+
+  " 起動AA表示
+  if 1
+    let startup = g:chalice_basedir.'/startup.aa'
+    if !filereadable(startup)
+      let startup = s:scriptdir.'/../startup.aa'
+    endif
+    call s:StartupAA(startup, AL_hasflag(g:chalice_startupflags, 'noanime') ? -1 : g:chalice_animewait)
+  endif
+
+  " ブックマークへカーソルを移動する
+  if AL_hasflag(g:chalice_startupflags, 'bookmark')
+    call s:GoBuf_ThreadList()
+  endif
 
   " 開始メッセージ表示
+  call s:UpdateTitleString()
   call s:Redraw('silent')
   call s:EchoH('WarningMsg', s:msg_chalice_start)
 endfunction
@@ -1324,7 +1416,10 @@ endfunction
 function! s:DoExternalCommand(cmd)
   let extcmd = a:cmd
   if has('win32') && &shell =~ '\ccmd'
-    let extcmd = '"' . extcmd . '"'
+    "let extcmd = '"' . extcmd . '"'
+    " 何故この処理が必要なのかわからない(思い出せない)。引用符内に&などの特
+    " 殊文字があると正しく解釈されない問題があり、それを回避するために暫定的
+    " に外すことにする。よってここは意図的に何もしないブロックになる。
   endif
   if g:chalice_verbose < 1
     return system(extcmd)
@@ -1354,10 +1449,7 @@ function! s:OpenThread(...)
     let board = b:board
     let title = substitute(curline, s:mx_thread_dat, '\1', '')
     let dat = substitute(curline, s:mx_thread_dat, '\3', '')
-    let url = 'http://' . host . '/test/read.cgi' . board . '/'. substitute(dat, '\.dat$', '', '')
-    if !AL_hasflag(flag, 'internal')
-      let url = url . '/l50'
-    endif
+    let url = s:GenerateOpenURL(host, board, dat, flag)
   elseif curline =~ mx2
     let url = matchstr(curline, mx2)
   else
@@ -1412,7 +1504,7 @@ endfunction
 "
 " 与えられたURLを2chかどうか判断しる!!
 "
-function! s:Parse2chURL(url)
+function! s:ParseURL_is2ch(url)
   " 各種URLパターン
   let mx = '^' . s:mx_url_2channel
   let mx_old = '^\(http://..\{-}/test/read.cgi\)?bbs=\([^&]\+\)&\%(amp\)\?key=\(\d\+\)\(\S\+\)\?'
@@ -1432,42 +1524,42 @@ function! s:Parse2chURL(url)
   if url == ''
     return 0
   endif
-  let s:parse2ch_host = substitute(url, mx, '\1', '')
-  let s:parse2ch_board = substitute(url, mx, '\2', '')
-  let s:parse2ch_dat = substitute(url, mx, '\3', '')
+  let s:parseurl_host = substitute(url, mx, '\1', '')
+  let s:parseurl_board = substitute(url, mx, '\2', '')
+  let s:parseurl_dat = substitute(url, mx, '\3', '') . '.dat'
 
   " 表示範囲を解釈
   " 参考資料: http://pc.2ch.net/test/read.cgi/tech/1002820903/
   let range = substitute(url, mx, '\4', '')
   let mx_range = '[-0-9]\+'
-  let s:parse2ch_range_mode = ''
-  let s:parse2ch_range_start = ''
-  let s:parse2ch_range_end = ''
+  let s:parseurl_range_mode = ''
+  let s:parseurl_range_start = ''
+  let s:parseurl_range_end = ''
   let str_range = matchstr(range, mx_range)
   if str_range != ''
     " 範囲表記を走査
     let mx_range2 = '\(\d*\)-\(\d*\)'
     if str_range =~ mx_range2
-      let s:parse2ch_range_start = substitute(str_range, mx_range2, '\1', '')
-      let s:parse2ch_range_end	 = substitute(str_range, mx_range2, '\2', '')
-      if s:parse2ch_range_start == ''
-	let s:parse2ch_range_start = 1
+      let s:parseurl_range_start = substitute(str_range, mx_range2, '\1', '')
+      let s:parseurl_range_end	 = substitute(str_range, mx_range2, '\2', '')
+      if s:parseurl_range_start == ''
+	let s:parseurl_range_start = 1
       endif
-      if s:parse2ch_range_end == ''
-	let s:parse2ch_range_end = '$'
+      if s:parseurl_range_end == ''
+	let s:parseurl_range_end = '$'
       endif
     else
       " 数字しかあり得ないので可
-      let s:parse2ch_range_start = str_range
-      let s:parse2ch_range_end = str_range
+      let s:parseurl_range_start = str_range
+      let s:parseurl_range_end = str_range
     endif
-    let s:parse2ch_range_mode = s:parse2ch_range_mode . 'r'
+    let s:parseurl_range_mode = s:parseurl_range_mode . 'r'
     " 表示フラグ(n/l)の判定
     if range =~ 'n'
-      let s:parse2ch_range_mode = s:parse2ch_range_mode . 'n'
+      let s:parseurl_range_mode = s:parseurl_range_mode . 'n'
     endif
     if range =~ 'l'
-      let s:parse2ch_range_mode = s:parse2ch_range_mode . 'l'
+      let s:parseurl_range_mode = s:parseurl_range_mode . 'l'
     endif
   endif
 
@@ -1486,9 +1578,9 @@ function! s:ConvertOldRange(range_old)
 
   let range = ''
   if a:range_old =~ mx_range_last
-    let range = substitute(matchstr(a:range_old, mx_range_last), mx_range_last, 'l\1', '')
+    let range = AL_sscan(a:range_old, mx_range_last, 'l\1')
   elseif a:range_old =~ mx_range_part
-    let range = substitute(matchstr(a:range_old, mx_range_part), mx_range_part, '\1-\2', '')
+    let range = AL_sscan(a:range_old, mx_range_part, '\1-\2')
   endif
   if a:range_old =~ mx_range_nofirst
     let range = range . 'n'
@@ -1688,7 +1780,7 @@ function! s:UpdateBoardList(force)
   if 1 || s:debug
     " これはしばらく強制的に埋め込む…
     call append(0, Chalice_foldmark(0) . "テスト鯖")
-    call append(1, " ばたー\t\t\t\thttp://tora3.2ch.net/butter/")
+    call append(1, " 実験室\t\t\t\thttp://ooo.2ch.net/jikken/")
   endif
 
   " folding作成
@@ -1773,28 +1865,24 @@ function! s:GoBuf_Write()
   endif
   return retval
 endfunction
+
 function! s:GoBuf_Preview()
   let retval = AL_selectwindow(s:buftitle_preview)
-  if retval < 0
-  endif
   return retval
 endfunction
+
 function! s:GoBuf_Thread()
   let retval = AL_selectwindow(s:buftitle_thread)
   return retval
 endfunction
+
 function! s:GoBuf_BoardList()
   let retval = AL_selectwindow(s:buftitle_boardlist)
-  if retval >= 0
-    execute "normal! 15\<C-w>|"
-  endif
   return retval
 endfunction
+
 function! s:GoBuf_ThreadList()
   let retval = AL_selectwindow(s:buftitle_threadlist)
-  if retval >= 0
-    execute "normal! 10\<C-w>_0"
-  endif
   return retval
 endfunction
 
@@ -2045,6 +2133,62 @@ function! s:TogglePreview()
 endfunction
 
 "------------------------------------------------------------------------------
+" 2HTML
+" HTML化
+"
+
+function! s:ShowWithHtml(...)
+  call s:GoBuf_Thread()
+  if !exists("b:host") || !exists("b:board") || !exists("b:dat")
+    call s:EchoH('Error', s:msg_error_htmlnotopen)
+    return 0
+  endif
+  let dat = s:GenerateLocalKako(b:host, b:board, b:dat)
+  if !filereadable(dat)
+    let dat = s:GenerateLocalDat(b:host, b:board, b:dat)
+    if !filereadable(dat)
+      call s:EchoH('Error', s:msg_error_htmlnodat)
+      return 0
+    endif
+  endif
+
+  " HTML化開始記事番号と終了記事番号を取得
+  if a:0 == 0
+    let startnum = matchstr(getline(s:GetLnum_Article('current')), '^\d\+')
+    let endnum = startnum
+  elseif a:0 == 1
+    let mx = '\(\d\+\)-\(\d\+\)'
+    if a:1 =~ mx
+      let startnum = AL_sscan(a:1, mx, '\1') + 0
+      let endnum = AL_sscan(a:1, mx, '\2') + 0
+    else
+      let startnum = a:1 + 0
+      let endnum = startnum
+    endif
+  else
+    let startnum = a:1 + 0
+    let endnum = a:2 + 0
+  endif
+
+  let url_base  = 'http://'.b:host.'/test/read.cgi'.b:board.'/'.matchstr(b:dat, '\d\+').'/'
+  let url_board = 'http://'.b:host.b:board.'/'
+
+  let html = Dat2HTML(dat, startnum, endnum, url_base, url_board)
+  if html != ''
+    " ファイルへ書き出し
+    let temp = s:dir_cache.'tmp.html'
+    call AL_execute('redir! > '.temp)
+    silent echo html
+    redir END
+    return AL_open_url('file://'.temp, g:chalice_exbrowser)
+  else
+    " 通常は起こらないエラー
+    call s:EchoH('Error', 'Something wrong with Dat2HTML()!!')
+    return 0
+  endif
+endfunction
+
+"------------------------------------------------------------------------------
 " BOOKMARK FUNCTIONS
 " Bookmarkルーチン
 "
@@ -2132,7 +2276,7 @@ function! s:AddBookmark(title, url)
     call append(0, a:title . "\t\t\t\t" . url)
   endif
 
-  execute "normal! " . winnum . "\<C-W>\<C-W>"
+  execute winnum.'wincmd w'
   if url == ''
     call s:Redraw('force')
     call s:EchoH('WarningMsg', s:msg_warn_bmkcancel)
@@ -2166,18 +2310,17 @@ function! s:Thread2Bookmark(target)
       call s:EchoH('ErrorMsg', s:msg_error_addnothread)
       return
     endif
-    let dat = substitute(b:dat, '\.dat$', '', '')
     if b:title_raw == ''
-      let title = b:host . b:board . '/' . dat
+      let title = b:host . b:board . '/' . b:dat
     else
       let title = b:title_raw
     endif
-    let url = 'http://' . b:host . '/test/read.cgi' . b:board . '/' . dat
+    let url = s:GenerateOpenURL(b:host, b:board, b:dat, 'internal')
   elseif AL_hasflag(a:target, 'threadlist')
     " スレ一覧から栞に登録
     call s:GoBuf_ThreadList()
     let curline = getline('.')
-    let mx = '^. \(.\+\) (\d\+) \%(\d\d\d\d\/\d\d\/\d\d \d\d:\d\d:\d\d\)\?\s*\(\d\+\)\.dat$'
+    let mx = '^. \(.\+\) (\d\+) \%(\d\d\d\d\/\d\d\/\d\d \d\d:\d\d:\d\d\)\?\s*\(\d\+\)\.\%(dat\|cgi\)$'
     if b:host == '' || b:board == '' || curline !~ mx
       call s:Redraw('force')
       call s:EchoH('ErrorMsg', s:msg_error_addnothreadlist)
@@ -2185,7 +2328,7 @@ function! s:Thread2Bookmark(target)
     endif
     let title = substitute(curline, mx, '\1', '')
     let dat = substitute(curline, mx, '\2', '')
-    let url = 'http://' . b:host . '/test/read.cgi' . b:board . '/' . dat
+    let url = s:GenerateOpenURL(b:host, b:board, dat, 'internal')
   elseif AL_hasflag(a:target, 'boardlist')
     " 板一覧から栞に登録
     call s:GoBuf_BoardList()
@@ -2246,7 +2389,7 @@ function! s:OpenWriteBuffer(...)
       return 0
     endif
     let title = b:title_raw
-    let key = substitute(b:dat, '\.dat$', '', '')
+    let key = substitute(b:dat, '\.\(dat\|cgi\)$', '', '')
     " 現在カーソルがある記事の引用
     if a:0 > 0 && AL_hasflag(a:1, 'quote')
       " 引用開始位置を検索
@@ -2458,40 +2601,16 @@ function! s:DoWriteBufferStub(flag)
     let message = substitute(message, ' ', '\&nbsp;', 'g')
   endif
 
-  if 0
-    echo "RAW MESSAGE=".message
-    echo "MESSAGE=" . AL_urlencode(message)
-    call input('---PAUSE---')
+  " 書き込みデータチャンク作成
+  let key = b:key
+  let flags = ''
+  if b:newthread
+    let key = localtime()
+    let flags = flags . 'new'
   endif
-
-  " (必要ならば)文字コードをeuc-jpからcp932に変換
-  if &encoding != s:encoding && has('iconv')
-    let title = iconv(title, &encoding, s:encoding)
-    let name = iconv(name, &encoding, s:encoding)
-    let mail = iconv(mail, &encoding, s:encoding)
-    let message = iconv(message, &encoding, s:encoding)
-  endif
-
-  " 書き込みデータチャンクを作成
-  "   利用すべきデータ変数: name, mail, message, b:bbs, b:key, localtime()
-  "   参考URL: http://members.jcom.home.ne.jp/monazilla/document/write.html
-  let chunk = ''
-  if !b:newthread
-    let chunk = chunk . 'submit=' . s:urlencoded_write
-  else
-    let chunk = chunk . 'subject=' . AL_urlencode(title)
-    let chunk = chunk . '&submit=' . s:urlencoded_newwrite
-  endif
-  let chunk = chunk . '&FROM=' . AL_urlencode(name)
-  let chunk = chunk . '&mail=' . AL_urlencode(mail)
-  let chunk = chunk . '&MESSAGE=' . AL_urlencode(message)
-  let chunk = chunk . '&bbs=' . b:bbs
-  " スレッド作成の時はグリニッジ秒が効いてくる?
-  if !b:newthread
-    let chunk = chunk . '&key=' . b:key
-    let chunk = chunk . '&time=' . localtime()
-  else
-    let chunk = chunk . '&time=' . b:key
+  let chunk = s:CreateWriteChunk(b:host, b:bbs, key, title, name, mail, message, flags)
+  if chunk == ''
+    return 0
   endif
 
   " 書き込み前の最後の確認
@@ -2547,7 +2666,7 @@ function! s:DoWriteBufferStub(flag)
   endif
   let opts = opts . ' -d @' . AL_quote(tmpfile)
   let opts = opts . ' -e http://' . b:host . '/' . b:bbs . '/index2.html'
-  let opts = opts . ' http://' . b:host . '/test/bbs.cgi'
+  let opts = opts . ' ' . s:GenerateWriteURL(b:host, b:bbs, b:key)
   call s:DoExternalCommand(s:cmd_curl . ' ' . opts)
   " 後始末
   call delete(tmpfile)
@@ -2559,20 +2678,88 @@ function! s:DoWriteBufferStub(flag)
   return 1
 endfunction
 
+function! s:CreateWriteChunk(host, board, key, title, name, mail, message, ...)
+  let flags = a:0 > 0 ? a:1 : ''
+
+  " ホストに合わせてサブミットキーを決定
+  let sbmk = '書き込み'
+  if AL_hasflag(flags, 'new')
+    if a:host =~ s:mx_servers_jbbstype
+      let sbmk = '新規書き込み'
+    else
+      let sbmk = '新規スレッド作成'
+    endif
+  endif
+
+  " ホストに合わせて書き込みエンコーディングを決定
+  let enc_write = 'cp932'
+  if a:host =~ s:mx_servers_euc
+    let enc_write = 'euc-jisx0213'
+  endif
+
+  " 文字コード変換
+  let title = a:title
+  let name = a:name
+  let mail = a:mail
+  let msg = a:message
+  if &encoding != enc_write
+    if has('iconv')
+      let title	= iconv(title,	&encoding, enc_write)
+      let name	= iconv(name,	&encoding, enc_write)
+      let mail	= iconv(mail,	&encoding, enc_write)
+      let msg	= iconv(msg,	&encoding, enc_write)
+      let sbmk	= iconv(sbmk,	&encoding, enc_write)
+    else
+      " TODO: エラーメッセージ
+      return ''
+    endif
+  endif
+
+  " 書き込み用チャンク作成
+  let sbmk = AL_urlencode(sbmk)
+  if b:host =~ s:mx_servers_jbbstype
+    return s:CreateWriteChunk_JBBS(a:host, a:board, a:key, title, name, mail, msg, sbmk, flags)
+  else
+
+    return s:CreateWriteChunk_2ch(a:host, a:board, a:key, title, name, mail, msg, sbmk, flags)
+  endif
+endfunction
+
+function! s:CreateWriteChunk_2ch(host, board, key, title, name, mail, message, submitkey, ...)
+  " 書き込みデータチャンクを作成
+  " 2ちゃんねる、2ちゃんねる互換板、したらば用
+  "   利用すべきデータ変数: name, mail, message, a:board, a:key(, host)
+  "   参考URL: http://members.jcom.home.ne.jp/monazilla/document/write.html
+  let flags = a:0 > 0 ? a:1 : ''
+  let chunk = ''
+  let chunk = chunk . 'submit=' . a:submitkey
+  if !AL_hasflag(flags, 'new')
+    let chunk = chunk . '&key=' . a:key
+  else
+    let chunk = chunk . '&subject=' . AL_urlencode(a:title)
+  endif
+  let chunk = chunk . '&FROM=' . AL_urlencode(a:name)
+  let chunk = chunk . '&mail=' . AL_urlencode(a:mail)
+  let chunk = chunk . '&MESSAGE=' . AL_urlencode(a:message)
+  let chunk = chunk . '&bbs=' . a:board
+  let chunk = chunk . '&time=' . localtime()
+  return chunk
+endfunction
+
 "------------------------------------------------------------------------------
 " FILENAMES
 " ファイル名の生成
 
 function! s:GenerateAboneFile(host, board, dat)
-  return s:dir_cache . 'abonedat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.dat$', '', '')
+  return s:dir_cache . 'abonedat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.\(dat\|cgi\)$', '', '')
 endfunction
 
 function! s:GenerateLocalDat(host, board, dat)
-  return s:dir_cache . 'dat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.dat$', '', '')
+  return s:dir_cache . 'dat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.\(dat\|cgi\)$', '', '')
 endfunction
 
 function! s:GenerateLocalKako(host, board, dat)
-  return s:dir_cache . 'kako_dat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.dat$', '', '')
+  return s:dir_cache . 'kako_dat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.\(dat\|cgi\)$', '', '')
 endfunction
 
 function! s:GenerateLocalSubject(host, board)
@@ -2589,6 +2776,39 @@ function! s:ShowNumberOfArticle(flags)
   elseif AL_hasflag(a:flags, 'curline')
     call s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
   endif
+endfunction
+
+function! s:FormatThread(local)
+  " バッファクリアとスレdatの読み込み
+  call AL_buffer_clear()
+  call AL_execute("read " . a:local)
+  normal! gg"_dd
+  " 最終記事番号を取得
+  let b:chalice_lastnum = line('$')
+  " Do the 整形
+  call s:EchoH('WarningMsg', s:msg_wait_threadformat)
+  return Dat2Text(g:chalice_verbose > 0 ? 'verbose' : '')
+endfunction
+
+function! s:FormatThreadDiff(local, newarticle)
+  call AL_execute('vertical 1sview '.a:local)
+  " 整形作業
+  let contents = ''
+  let i = a:newarticle
+  let lastnum = line('$')
+  while i <= lastnum
+    let contents =  contents ."\r". DatLine2Text(i, getline(i))
+    let i = i + 1
+  endwhile
+  silent! bwipeout!
+  " スレバッファへ挿入
+  let save_reg = @"
+  let @" = substitute(contents, "\r", "\<NL>", 'g')
+  call s:GoBuf_Thread()
+  normal! G$p
+  let @" = save_reg
+  " 最終記事番号を保存
+  let b:chalice_lastnum = lastnum
 endfunction
 
 "
@@ -2652,6 +2872,7 @@ function! s:FormatThreadInfo(startline, endline, ...)
     let i = i + 1
   endwhile
 
+  normal! 0
 endfunction
 
 function! s:FormatBoard()
@@ -2688,16 +2909,221 @@ function! s:FormatBoard()
   endif
 endfunction
 
-function! s:FormatThread(local)
-  " バッファクリアとスレdatの読み込み
-  call AL_buffer_clear()
-  call AL_execute("read " . a:local)
-  normal! gg"_dd
-  " 最終記事番号を取得
-  let b:chalice_lastnum = line('$')
-  " Do the 整形
-  call s:EchoH('WarningMsg', s:msg_wait_threadformat)
-  return Dat2Text(g:chalice_verbose > 0 ? 'verbose' : '')
+"------------------------------------------------------------------------------
+" BBS WRAPPER
+" BBSの種別を隠蔽するためのラッパー
+"
+
+function! s:GenerateWriteURL(host, board, key, ...)
+  " host, board, key, flagからき込み用URLを生成する
+  let flags = a:0 > 0 ? a:1 : ''
+  if a:host =~ s:mx_servers_jbbstype
+    let url = ' http://' . a:host . '/bbs/write.cgi'
+  elseif a:host =~ s:mx_servers_shitaraba
+    let url = ' http://' . a:host . '/../cgi-bin/bbs.cgi'
+  else
+    let url = ' http://' . a:host . '/test/bbs.cgi'
+  endif
+  return url
+endfunction
+
+function! s:GenerateOpenURL(host, board, key, ...)
+  " host, board, key, flagから開くべきURLを生成する
+  let flags = a:0 > 0 ? a:1 : ''
+  let board = substitute(a:board, '^/', '', '')
+  let key = substitute(a:key, '\.\(dat\|cgi\)$', '', '')
+  if a:host =~ s:mx_servers_jbbstype
+    let url = 'http://'.a:host.'/bbs/read.cgi?BBS='.board.'&KEY='.key
+    if !AL_hasflag(flags, 'internal')
+      let url = url . '&LAST=50'
+    endif
+  else
+    let url = 'http://'.a:host.'/test/read.cgi/'.board.'/'.key
+    if !AL_hasflag(flags, 'internal')
+      let url = url . '/l50'
+    endif
+  endif
+  return url
+endfunction
+
+function! s:ParseURL(url)
+  if s:ParseURL_is2ch(a:url)
+    return 1
+  elseif s:ParseURL_isJBBS(a:url)
+    return 1
+  else
+    return 0
+  endif
+endfunction
+
+"------------------------------------------------------------------------------
+" JBBS
+" JBBS/したらば/まちBBS対応用
+"
+
+function! s:ParseURL_isJBBS(url)
+  let mx = '^http://\(..\{-\}\)/bbs/read.cgi?BBS=\([^/&]\+\)&KEY=\(\d\+\)\(.*\)'
+  if a:url !~ mx
+    return 0
+  endif
+
+  let s:parseurl_host = substitute(a:url, mx, '\1', '')
+  let s:parseurl_board = substitute(a:url, mx, '/\2', '')
+  let s:parseurl_dat = substitute(a:url, mx, '\3', '') . '.cgi'
+
+  let s:parseurl_range_mode = ''
+  let s:parseurl_range_start = ''
+  let s:parseurl_range_end = ''
+  let range = substitute(a:url, mx, '\4', '')
+  if range != ''
+    let mx_range_start = '&START=\(\d\+\)'
+    let mx_range_end = '&END=\(\d\+\)'
+    let mx_range_last = '&LAST=\(\d\+\)'
+    let mx_range_nofirst = '&NOFIRST=TRUE'
+    if range =~ mx_range_start
+      let s:parseurl_range_start = AL_sscan(range, mx_range_start, '\1')
+    endif
+    if range =~ mx_range_end
+      let s:parseurl_range_end = AL_sscan(range, mx_range_end, '\1')
+    endif
+    if s:parseurl_range_start == ''
+      let s:parseurl_range_start = 1
+    endif
+    if s:parseurl_range_end == ''
+      let s:parseurl_range_end = '$'
+    endif
+    let s:parseurl_range_mode = s:parseurl_range_mode . 'r'
+    if range =~ mx_range_nofirst
+      let s:parseurl_range_mode = s:parseurl_range_mode . 'n'
+    endif
+    if range =~ mx_range_last
+      let s:parseurl_range_mode = s:parseurl_range_mode . 'l'
+      let s:parseurl_range_start = substitute(range, mx_range_last, '\1', '')
+    endif
+  endif
+  return 1
+endfunction
+
+function! s:DatCatchup_JBBS(title, host, board, dat, flags)
+  let local = s:GenerateLocalDat(a:host, a:board, a:dat)
+  let prevsize = getfsize(local)
+  let oldarticle = 0
+  " 差分取得用のフラグ
+  let continued = 0
+  if AL_hasflag(a:flags, 'continue') && filereadable(local)
+    let continued = 1
+    let oldarticle = s:CountLines(local)
+  endif
+
+  let newarticle = oldarticle + 1
+
+  if !s:dont_download && !AL_hasflag(a:flags, 'noforce')
+    let tmpfile = tempname()
+    let bbs = substitute(a:board, '^/', '', '')
+    let key = substitute(a:dat, '\.cgi$', '', '')
+    " WORKAROUND: まちBBSではread.plを使ったほうが速い。
+    let cgi = a:host =~# s:mx_servers_machibbs ? 'read.pl' : 'read.cgi'
+    if continued
+      let remote = '/bbs/'.cgi.'?BBS='.bbs.'&KEY='.key.'&START='.newarticle.'&NOFIRST=TRUE'
+    else
+      let remote = '/bbs/'.cgi.'?BBS='.bbs.'&KEY='.key
+    endif
+    let result = s:HttpDownload(a:host, remote, tmpfile, '')
+    let result = s:Convert_JBBSHTML2DAT(local, tmpfile, continued)
+    call delete(tmpfile)
+    if !result
+      " スレが存在しない
+      call s:GoBuf_Thread()
+      call AL_buffer_clear()
+      call setline(1, 'Error: '.s:msg_error_nothread)
+      call append('$', 'Error: '.s:msg_error_accesshere)
+      call append('$', '')
+      call append('$', '  '.s:GenerateOpenURL(a:host, a:board, a:dat))
+      let b:host = a:host
+      let b:board = a:board
+      let b:dat = a:dat
+      let b:title = s:prefix_thread
+      let b:title_raw = ''
+      return 0
+    endif
+  endif
+
+  call s:GoBuf_Thread()
+  let b:datutil_datsize = getfsize(local)
+  if AL_hasflag(a:flags, 'ifmodified') && prevsize >= b:datutil_datsize
+    return -1
+  endif
+
+  call s:UpdateThreadInfo(a:host, a:board, a:dat)
+  let b:chalice_local = local
+  return newarticle
+endfunction
+
+function! s:Convert_JBBSHTML2DAT(datfile, htmlfile, continued)
+  " jbbs.net、jbbs.shitaraba.com、machibbs.comのcgiアウトプットを解析。
+  " 1レスは<dt>要素から始まる1行で形成されており、下の様な形式（共通）：
+  "
+  " <dt>1 名前：<b>NAME</b> 投稿日： 2002/05/29(水) 00:48<br><dd>本文 <br><br>
+  " ^^^^^^^^^^^^           ^^^^^^^^^                     ^^^^^^^^    ^^^^^^^^^
+  "
+  " 上の '^' で示した部分を削除、または区切り文字 '<>' に置換することで、2
+  " ちゃんのdat形式に変換する。
+
+  call AL_execute('1vsplit '.a:htmlfile)
+  if !a:continued
+    " 全取得の場合、タイトルを保持しておく
+    call search('<title>')
+    let title = substitute(getline('.'), '<title>\([^<]*\)</title>', '\1', '')
+  endif
+  " リモートホストのアドレス表示機能がある板（まち、JBBSの一部）で、記事中に
+  " 挿入される改行を修正。例：
+  "
+  " <dt>1 名前：<b>NAME</b> 投稿日： 2002/07/12(金) 14:55 [ remote.host.ip
+  "  ]<br><dd> 本文 <br><br>
+  if getline(search('^<dt>') + 1) =~ '^\s*]'
+    silent g/^<dt>/join
+  endif
+  silent v/^<dt>/delete _
+  silent %s+^<dt>\d\+\s*名前：\%(<a href="mailto:\([^"]*\)">\)\?\(.\{-\}\)\%(</a>\)\?\s*投稿日：\s*\(.*\)\s*<br>\s*<dd>+\2<>\1<>\3<>+ie
+  if getline(1) !~ '^$'
+    if a:continued
+      silent %s/\s*\(<br>\)\+$/<>/
+      call AL_execute('write! >> '.a:datfile)
+    else
+      silent 1s/\s*\(<br>\)\+$/\='<>'.title/
+      if line('$') > 1
+	silent 2,$s/\s*\(<br>\)\+$/<>/
+      endif
+      call AL_execute('write! '.a:datfile)
+    endif
+  endif
+  silent! bwipeout!
+  if !filereadable(a:datfile)
+    return 0
+  else
+    return 1
+  endif
+endfunction
+
+function! s:CreateWriteChunk_JBBS(host, board, key, title, name, mail, message, submitkey, ...)
+  " jbbs.net, jbbs.shitaraba.com, machibbs.com用の書き込みデータチャンク作成
+  let chunk = ''
+  let chunk = chunk . 'submit=' . a:submitkey
+  if !b:newthread
+    let chunk = chunk . '&KEY=' . b:key
+  else
+    let chunk = chunk . '&SUBJECT=' . AL_urlencode(a:title)
+  endif
+  let chunk = chunk . '&NAME=' . AL_urlencode(a:name)
+  let chunk = chunk . '&MAIL=' . AL_urlencode(a:mail)
+  let chunk = chunk . '&MESSAGE=' . AL_urlencode(a:message)
+  let chunk = chunk . '&BBS=' . b:bbs
+  if !b:newthread
+    let chunk = chunk . '&TIME=' . localtime()
+  else
+    let chunk = chunk . '&TIME=' . b:key
+  endif
+  return chunk
 endfunction
 
 "------------------------------------------------------------------------------
@@ -2739,9 +3165,13 @@ function! s:CommandRegister()
   command! -nargs=* ChaliceCruise	call <SID>Cruise(<q-args>)
   command! -nargs=* ChaliceShowNum	call <SID>ShowNumberOfArticle(<q-args>)
   command! -nargs=* ChaliceCheckThread	call <SID>CheckThreadUpdate(<q-args>)
+  command! -nargs=* Chalice2HTML	call <SID>ShowWithHtml(<f-args>)
+  command! ChaliceAdjWinsize		call <SID>AdjustWindowSize(15,10)
+  delcommand Chalice
 endfunction
 
 function! s:CommandUnregister()
+  command! Chalice			call <SID>ChaliceOpen()
   delcommand ChaliceQuit
   delcommand ChaliceQuitAll
   delcommand ChaliceGoBoardList
@@ -2774,4 +3204,6 @@ function! s:CommandUnregister()
   delcommand ChaliceCruise
   delcommand ChaliceShowNum
   delcommand ChaliceCheckThread
+  delcommand Chalice2HTML
+  delcommand ChaliceAdjWinsize
 endfunction
