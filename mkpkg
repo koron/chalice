@@ -1,0 +1,19 @@
+#!/bin/csh
+#
+# Last Change: 25-Nov-2001.
+# Written By:  Muraoka Taro <koron@tka.att.ne.jp>
+
+if ($1 == '') then
+  echo ""
+  echo "Please specify package version string."
+  echo "Example: './mkpkg 1.0-xxx '"
+  exit
+endif
+
+set pkgdir = "chalice-$1"
+cd ..
+rm -rf $pkgdir
+cvs export -D now -d $pkgdir proj/chalice
+qkc -s -u ${pkgdir}/*/*.vim
+
+tar cyvf "${pkgdir}.tar.bz2" $pkgdir

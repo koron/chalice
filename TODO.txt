@@ -1,0 +1,21 @@
+ vi:set ts=8 sts=4 sw=4 tw=0 ft=memo:
+ Last Change: 22-Nov-2001.
+
+TODO
+
+ONICE
+    AAを表示するための仕組み
+    スレの内容を.txtにして保存する仕組み、及びそのfiletype類
+    foldingを利用した簡易表示(スレ一覧・スレ)
+    引用の仕組み
+    新規スレの作成
+
+DONE
+    foldingを利用した簡易表示(スレの栞)
+    Mac OS Xへの対応
+    (UNIX)euc-jpをsjisに変換する仕組み
+    UNIXでの動作テスト(特に書込み)→書込み時のコンバートをサポート
+    foldingを利用した簡易表示(板一覧)
+    ブックマーク
+    UNIXで書込み時にSJISにコンバート
+    スレ、板を外部ブラウザで表示する

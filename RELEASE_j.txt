@@ -1,0 +1,44 @@
+2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.0を公開します。開発
+開始より約10日。急造ながら各種OS(Windows/Mac OS X/UNIX)で動く優れものに仕上
+がりました。
+
+- Chalice for Vim
+　http://www.kaoriya.net/#CHALICE
+
+主な特徴は以下のとおりです。その他、詳細はアーカイブに同梱のREADME_j.txtを参
+照してください。
+
+　- Vimの操作性を継承
+　- 片手(キーボード)で閲覧可能
+　- マルチプラットホーム対応
+　- スレの栞(ブックマーク)装備
+　- gzip圧縮転送対応
+
+ChaliceはテキストエディタVimのVersion 6以降のプラグインとして動作します。Vim
+の情報・入手については下記のURLを参照してください。Windows版とMac OS X版のバ
+イナリについては、上記のChaliceと同じサイトより入手可能です。
+
+- gvim日本語Win/OS X版
+　http://www.kaoriya.net/#VIM
+
+- Vim関連資料
+  http://www.vim.org/
+  http://vim.sourceforge.net/
+
+ChaliceはcURLを使用してスレデータを取得しています。cURLを持ってない方は別途
+入手してください。Windowsでは下記のcurl.exeバイナリをダウンロードします。
+UNIXではソースを持ってきてコンパイル・インストールしてください。Mac OS Xでは
+最初からインストールされています。
+
+- Win用curl.exeバイナリ
+　http://www.kaoriya.net/dist/curl-7.9.1-w32.tar.bz2
+
+- cURLのサイト(ソース他)
+　http://curl.sourceforge.net/
+
+UNIXで使用するには+iconvでコンパイルした上で、qkcかnkfが必要です。変換精度の
+観点からqkcをオススメします。下記のサイトよりソースをダウンロードしてインス
+トールしてください。
+
+- qkcのサイト(ソース)
+　http://hp.vector.co.jp/authors/VA000501/index.html
