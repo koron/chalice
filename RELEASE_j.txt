@@ -1,9 +1,9 @@
-2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.3を公開します。Vimさ
+2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.4を公開します。Vimさ
 え動くのであればどのOSでも同じように操作することができます。なんか2ちゃんね
 る以外の掲示板が読めることもあるようです。
 
 - Chalice for Vim
-  http://www.kaoriya.net/dist/chalice-1.3.tar.bz2
+  http://www.kaoriya.net/dist/chalice-1.4.tar.bz2
   http://www.kaoriya.net/#CHALICE
 
 利用するのに必要なChalice以外のソフトウェア、各プラットホームに固有の情報、

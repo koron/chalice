@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 09-Apr-2002.
+" Last Change: 24-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -21,6 +21,8 @@ setlocal shiftwidth=1
 
 nnoremap <silent> <buffer> l		zo
 nnoremap <silent> <buffer> h		zc
+nnoremap <silent> <buffer> <CR>		:ChaliceOpenThread bookmark<CR>
+nnoremap <silent> <buffer> <2-LeftMouse>	:ChaliceOpenThread bookmark<CR>
 
 "nunmap <buffer> i
 "nunmap <buffer> I

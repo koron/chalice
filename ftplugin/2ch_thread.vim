@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 17-Apr-2002.
+" Last Change: 04-May-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -54,12 +54,18 @@ nnoremap <silent> <buffer> a		:ChaliceWrite anony<CR>
 nnoremap <silent> <buffer> A		:ChaliceWrite anony,sage<CR>
 nnoremap <silent> <buffer> o		:ChaliceWrite<CR>
 nnoremap <silent> <buffer> O		:ChaliceWrite sage<CR>
+nnoremap <silent> <buffer> -i		:ChaliceWrite quote<CR>
+nnoremap <silent> <buffer> -I		:ChaliceWrite sage,quote<CR>
+nnoremap <silent> <buffer> -a		:ChaliceWrite anony,quote<CR>
+nnoremap <silent> <buffer> -A		:ChaliceWrite anony,sage,quote<CR>
+nnoremap <silent> <buffer> -o		:ChaliceWrite quote<CR>
+nnoremap <silent> <buffer> -O		:ChaliceWrite sage,quote<CR>
 
 nnoremap <silent> <buffer> p		<C-b>
 nnoremap <silent> <buffer> K		<C-y>
 nnoremap <silent> <buffer> J		<C-e>
 
-nnoremap <buffer> <2-LeftMouse>		:ChaliceHandleJump<CR>
+nnoremap <silent> <buffer> <2-LeftMouse>	:ChaliceHandleJump<CR>
 
 " 番号付きの外部ブラウザを起動する
 function! s:KickNumberedExternalBrowser(exnum)

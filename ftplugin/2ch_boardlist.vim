@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 17-Apr-2002.
+" Last Change: 24-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -29,12 +29,13 @@ nnoremap <silent> <buffer> <CR>		:ChaliceOpenBoard<CR>
 nnoremap <silent> <buffer> <S-CR>	:ChaliceOpenBoard external<CR>
 nnoremap <silent> <buffer> -<CR>	:ChaliceOpenBoard external<CR>
 nnoremap <silent> <buffer> R		:ChaliceReloadBoardList<CR>
+nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd boardlist<CR>
 
 nnoremap <silent> <buffer> l		zo
 nnoremap <silent> <buffer> h		zc
 nnoremap <silent> <buffer> <BS>		0
 
-nnoremap <buffer> <2-LeftMouse>		:ChaliceOpenBoard<CR>
+nnoremap <silent> <buffer> <2-LeftMouse>	:ChaliceOpenBoard<CR>
 
 "
 " foldingê›íË

@@ -1,5 +1,79 @@
 Chalice 1.x 過去の変更点
-Last Change: 14-Apr-2002.
+Last Change: 11-May-2002.
+
+● 22-Apr-2002 (1.3 正式版)
+  起動法→終了までの流れを意識して修正
+  ドキュメントtypo修正
+  HelpInstall()のディレクトリバグを修正
+● 20-Apr-2002 (1.3i-rc4)
+  subject.txt.gzへのアクセスを中止(必要ないことが判明→コード封鎖)
+  chalice_nosubject_gzを削除
+  UNIX用インストールスクリプトを修正
+  gzipが無いと起動しないように変更
+  ヘルプファイルとヘルプのインストール機能を追加
+  外部ブラウザによる参照URLの展開手順を修正(%の問題)
+  noquery_quit=0の時には必ずquery_writeするように変更
+● 18-Apr-2002 (1.3h-rc3)
+  ドキュメントの説明を修正し必要要件を追加
+  chalice_writeoptionsを導入
+  書込みバッファでの二重引用を別の色で強調
+  <C-C><CR>をgui_running以外でも使えるように変更(MacOS X対策)
+  オン/オフラインモード切替時にメッセージでも表示
+● 16-Apr-2002 (1.3g-rc2)
+  実体参照をalice.vimへ実装
+  書込み時に&を&amp;に置換
+  クリップボードにいちいちURLを送るのを取りやめ
+  書込みバッファの'bufhidden'設定を解除(Chalice使用時のcdによるエラーを回避)
+  二重引用を別の色で強調
+  非GUI時の<S-CR>と<C-CR>をそれぞれ<C-S><CR>と<C-C><CR>に変更
+  書込みバッファでの<C-X>を無効にした
+  dat取得済みのスレを一覧から栞へ登録できない問題修正
+  栞への登録が無効になっていた問題を修正
+  :Article {n}コマンド追加
+● 14-Apr-2002 (1.3f-rc1)
+  subject.txt.gzに対応(非公開変数chalice_nosubject_gzはchalice.vim参照)
+  HttpDownload()がhttpリザルトステータスを帰すように改良
+  http://無しのURL(www.kaoriya.netのような表記)を開けるように変更
+  外部ブラウザで開く時のURLをAL_quote()するように変更
+  一部の関数をaliceへ移動
+  chalice_columnsが未設定の時、終了時に'columns'を復帰しないように変更
+  /\?に表記を統一
+  表記されたhttpsに対応
+  一覧から栞へ直接登録ができない問題を修正
+  'cmdheight' < 2で起動時に栞を起動するとメッセージがpauseする問題を修正
+● 13-Apr-2002 (1.3e-beta)
+  書込み中
+  番号つき外部ブラウザを導入 chalice_exbrowser_{n}が{n}<S-CR>で起動する
+  起動時の動作設定変数(chalice_startupflags)を追加
+  起動時のスレの栞起動をサポート
+  オフライン機能を追加
+  もどき板ではスレの"＠｀"を","に置換するように変更
+  スレ一覧で、レス数が右にずれていくバグを修正
+● 12-Apr-2002 (1.3d-beta)
+  書込みバッファにcommentsを設定
+  chalice_statuslineにより項目を追加可能に改良
+  スレの表示を高速化…したつもり
+  subjectの&quot;に対応
+  したらばのsubject/dat読み対応。
+  euc-jpが文字化けすることありiconv治しますかぁ?
+● 11-Apr-2002 (1.3c-beta)
+  OpenThread()で生成されたURLをクリップボードへコピー
+  高速URL Encoderの導入
+  書込みバッファでの q, Q (Chalice終了)を無効化
+● 10-Apr-2002 (1.3b-beta)
+  板一覧の板名に空白を許すようにした
+  書込み時の確認を省略する変数chalice_noquery_writeを導入
+  hostの解釈法を変更。概念的にはbbsrootが正しい
+  変数chalice_foldmarksを導入
+  2ch_writeにformatoptions-=rを追加
+  alice.vimに移行を開始
+● 09-Apr-2002 (1.3a-beta)
+  「もどき板」を閲覧できるようにしてみたり
+  試験的にsubject.txtの解釈をフレキシブルにしてみる
+  メニューのURLを標準以外に設定可能に(変数chalice_menu_url)
+  書込み時にcookieを利用(変数chalice_curl_cookies = 0で無効化)
+  板整形法を修正
+  1.2.2がパッケージに反映されていなかった件を修正
 
 ● 07-Apr-2002 (1.2.2)
   板一覧のURL判定正規表現を見直し

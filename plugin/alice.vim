@@ -2,10 +2,10 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 20-Apr-2002.
+" Last Change: 11-May-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
-let s:version_serial = 3
+let s:version_serial = 101
 
 if exists('plugin_alice_disable') || (exists('g:alice_version') && g:alice_version > s:version_serial)
   finish
@@ -15,6 +15,23 @@ let g:alice_version = s:version_serial
 "------------------------------------------------------------------------------
 " ALICE
 
+function! AL_del_lastsearch()
+  call histdel("search", -1)
+endfunction
+
+function! AL_fileread(filename)
+  " Read file and return it in multi-line string form.
+  if !filereadable(a:filename)
+    return ''
+  endif
+  if has('win32') && &shell =~ '\ccmd'
+    let cmd = 'type'
+  else
+    let cmd = 'cat'
+  endif
+  return AL_system(cmd . ' ' . AL_quote(a:filename))
+endfunction
+
 function! AL_chompex(str)
   " Remove leading and trailing white-spaces.
   return substitute(a:str, '^\s\+\|\s\+$', '', '')
@@ -23,12 +40,6 @@ endfunction
 function! AL_chomp(str)
   " Like perl chomp() function.  (But did't change argument)
   return substitute(a:str, '\s\+$', '', '')
-endfunction
-
-function! AL_hasflag(flags, flag)
-  " Return 1 (not 0) if a:flags has word a:flag.  a:flags is supposed a list
-  " of words separated by camma as CSV.
-  return a:flags =~ '\(^\|,\)' . a:flag .'\(,\|$\)'
 endfunction
 
 function! AL_buffer_clear()
@@ -135,6 +146,55 @@ function! AL_quote(str)
   " Quote filepath by quote symbol.
   let fq = AL_get_quotesymbol()
   retur fq . a:str. fq
+endfunction
+
+"------------------------------------------------------------------------------
+" FLAG OPRATION
+
+function! AL_delflag(flags, flag)
+  let newflags = substitute(a:flags, '\(^\|,\)' .a:flag. '\(,\|$\)', ',', 'g')
+  let newflags = substitute(newflags, ',,\+', ',', 'g')
+  let newflags = substitute(newflags, '^,', '', 'g')
+  let newflags = substitute(newflags, ',$', '', 'g')
+  return newflags
+endfunction
+
+function! AL_addflag(flags, flag)
+  return AL_hasflag(a:flags, a:flag) ? a:flags : (a:flags == '' ? a:flag : a:flags .','. a:flag)
+endfunction
+
+function! AL_hasflag(flags, flag)
+  " Return 1 (not 0) if a:flags has word a:flag.  a:flags is supposed a list
+  " of words separated by camma as CSV.
+  return a:flags =~ '\(^\|,\)' . a:flag .'\(,\|$\)'
+endfunction
+
+"------------------------------------------------------------------------------
+" MULTILINE STRING
+
+function! AL_getline(multistr, linenum)
+  if a:linenum == 0
+    return AL_firstline(a:multistr)
+  else
+    return substitute(a:multistr, "^\\%([^\<NL>]*\<NL>\\)\\{" . a:linenum . "}\\([^\<NL>]*\\).*", '\1', '')
+  endif
+endfunction
+
+function! AL_countlines(multistr)
+  if a:multistr == ''
+    return 0
+  else
+    return strlen(substitute(a:multistr, "[^\<NL>]*\<NL>\\?", 'a', 'g'))
+  endif
+endfunction
+
+function! AL_lastlines(multistr)
+  let nextline = matchend(a:multistr, "^[^\<NL>]*\<NL>\\?")
+  return strpart(a:multistr, nextline)
+endfunction
+
+function! AL_firstline(multistr)
+  return matchstr(a:multistr, "^[^\<NL>]*")
 endfunction
 
 "------------------------------------------------------------------------------

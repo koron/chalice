@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 22-Apr-2002.
+" Last Change: 07-May-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -197,6 +197,7 @@ let s:msg_error_writebufbody = '書き込みメッセージが空です.'
 let s:msg_error_writeabort = '書き込みを中止しました.'
 let s:msg_error_writecancel = '書き込みをキャンセルします.'
 let s:msg_error_writetitle = '新スレにはタイトルが必要です.'
+let s:msg_error_addnoboardlist = '板一覧から栞へ登録出来ません.'
 let s:msg_error_addnothread = 'まだスレを開いていないので登録出来ません.'
 let s:msg_error_addnothreadlist = 'スレ一覧から栞へ登録出来ません.'
 let s:msg_error_nocachedir = 'キャッシュディレクトリを作成出来ません.'
@@ -321,9 +322,19 @@ function! s:HandleURL(url, flag)
   if a:url !~ '\(https\?\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+' " URLPAT
     return 0
   endif
-  if AL_hasflag(a:flag, '\cexternal') || !s:Parse2chURL(a:url)
-    " 強制的に外部ブラウザを使用するように指定されたかURLが、2chではない時
+  if AL_hasflag(a:flag, '\cexternal')
+    " 強制的に外部ブラウザを使用するように指定された
     call s:OpenURL(a:url)
+  elseif !s:Parse2chURL(a:url)
+    " URLが2chではない時
+    call s:GoBuf_BoardList()
+    if search(a:url) != 0
+      normal! zO0z.
+      execute maparg("<CR>")
+    else
+      call s:GoBuf_Thread()
+      call s:OpenURL(a:url)
+    endif
   else
     if !AL_hasflag(a:flag, '\cnoaddhist')
       call s:AddHistoryJump(s:ScreenLine(), line('.'))
@@ -332,7 +343,7 @@ function! s:HandleURL(url, flag)
     " URLが2chと判断される時
     "	s:parse2ch_host, s:parse2ch_board, s:parse2ch_datはParse2chURL()内で
     "	設定される暗黙的な戻り値。
-    call s:UpdateThread('', s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat . '.dat', 'continue')
+    let curarticle = s:UpdateThread('', s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat . '.dat', 'continue')
 
     if s:parse2ch_range_mode =~ 'r'
       if s:parse2ch_range_mode !~ 'l'
@@ -348,9 +359,17 @@ function! s:HandleURL(url, flag)
 	  let fold_end = s:GetLnum_Article(s:parse2ch_range_start) - 2
 	  call AL_execute(fold_start . ',' . fold_end . 'fold')
 	endif
+	call s:GoThread_Article(s:parse2ch_range_start)
       else
-	" リストモード
-	" TODO: 表示範囲指定を解釈
+	" リストモード('l')
+	let fold_start = s:GetLnum_Article(s:parse2ch_range_mode =~ 'n' ? 1 : 2) - 1
+	let fold_end = s:GetLnum_Article(s:GetThreadLastNumber() - s:parse2ch_range_start + (s:parse2ch_range_mode =~ 'n' ? 1 : 2)) - 2
+	if fold_start < fold_end
+	  call AL_execute(fold_start . ',' . fold_end . 'fold')
+	endif
+	if !s:GoThread_Article(curarticle)
+	  normal! Gzb
+	endif
       endif
     endif
 
@@ -359,6 +378,10 @@ function! s:HandleURL(url, flag)
     endif
   endif
   return 1
+endfunction
+
+function! s:GetThreadLastNumber()
+  return getbufvar(s:buftitle_thread, 'chalice_lastnum')
 endfunction
 
 "
@@ -460,7 +483,12 @@ function! s:UpdateThread(title, host, board, dat, flag)
     call s:HttpDownload(b:host, remote, local, a:flag)
     " (必要ならば)スレ一覧のスレ情報を更新
     if g:chalice_threadinfo
-      call s:FormatThreadInfo(1, 0)
+      call s:GoBuf_ThreadList()
+      if b:host . b:board ==# a:host . a:board
+	if a:dat != '' && search(a:dat, 'w')
+	  call s:FormatThreadInfo(line('.'), line('.'))
+	endif
+      endif
       call s:GoBuf_Thread()
     endif
   endif
@@ -468,6 +496,7 @@ function! s:UpdateThread(title, host, board, dat, flag)
   " スレッドをバッファにロードして整形
   call AL_buffer_clear()
   call AL_execute("read " . local)
+  let b:datutil_datsize = getfsize(local)
   normal! gg"_dd
   if prevsize > 0
     call AL_execute('normal! ' . prevsize . 'go')
@@ -476,31 +505,18 @@ function! s:UpdateThread(title, host, board, dat, flag)
     let newarticle = 1
   endif
 
-  " a:titleが設定されていない時、1の書き込みからスレ名を判断する
-  if a:title == ''
-    " 2chか「もどき板」かによって動作を変更
-    let firstline = getline(1)
-    if firstline =~ '<>'
-      let title = substitute(firstline, '^.\+<>\(.\+\)$', '\1', '')
-    else
-      let title = substitute(firstline, '^.\+,\(.\+\)$', '\1', '')
-    endif
-
-    " スレのタイトルをバッファ名に設定
-    if title != ''
-      let b:title = s:prefix_thread . title
-      let b:title_raw = title
-    endif
-  endif
-
   " 整形
-  call s:FormatThread()
+  let title = s:FormatThread()
+  " 常にdat内のタイトルを使用する
+  let b:title = s:prefix_thread . title
+  let b:title_raw = title
 
   if !s:GoThread_Article(newarticle)
     normal! Gzb
   endif
   call s:Redraw('force')
   call s:EchoH('WarningMsg', s:msg_help_thread)
+  return newarticle
 endfunction
 
 "
@@ -822,7 +838,7 @@ function! s:HelpInstall(scriptdir)
 
   " 文字コードのコンバート
   if !filereadable(helpfile) || (filereadable(helporig) && getftime(helporig) > getftime(helpfile))
-    silent execute "view " . helporig
+    silent execute "sview " . helporig
     set fileencoding=japan fileformat=unix
     silent execute "write! " . helpfile
     bwipeout!
@@ -950,6 +966,12 @@ endfunction
 "
 function! s:OpenThread(...)
   let flag = (a:0 > 0) ? a:1 : 'internal'
+  if AL_hasflag(flag, 'firstline')
+    " 外部ブラウザにはfirstlineだとかそうじゃないという概念がないから、
+    " firstline指定時は暗にinternalとして扱って良い。
+    let flag = flag . ',internal'
+  endif
+
   let curline = getline('.')
   let mx2 = '\(http://[-!#%&+,./0-9:;=?@A-Za-z_~]\+\)' " URLPAT
 
@@ -958,7 +980,10 @@ function! s:OpenThread(...)
     let board = b:board
     let title = substitute(curline, s:mx_thread_dat, '\1', '')
     let dat = substitute(curline, s:mx_thread_dat, '\3', '')
-    let url = 'http://' . host . '/test/read.cgi' . board . '/'. substitute(dat, '\.dat$', '', '') . '/l50'
+    let url = 'http://' . host . '/test/read.cgi' . board . '/'. substitute(dat, '\.dat$', '', '')
+    if !AL_hasflag(flag, 'internal')
+      let url = url . '/l50'
+    endif
   elseif curline =~ mx2
     let url = matchstr(curline, mx2)
   else
@@ -967,9 +992,11 @@ function! s:OpenThread(...)
     return
   endif
 
-" if has('clipboard')
-"   let @* = url
-" endif
+  " URLは抽出できたが[板]がある場合
+  if AL_hasflag(flag, 'bookmark') && curline =~ '^\s*\[板\]'
+    return s:OpenBoard()
+  endif
+
   call s:HandleURL(url, flag . ',noaddhist')
   if AL_hasflag(flag, 'firstline')
     normal! gg
@@ -978,18 +1005,18 @@ function! s:OpenThread(...)
 endfunction
 
 "
-" 現在のカーソル行の板を開く
+" 現在のカーソル行にあるURLを板として開く
 "
 function! s:OpenBoard(...)
-  let board = getline('.')
-  let mx = '^ \(.\{-\}\)\s\+http://\(..\{-\}\)\(/[^/]\+\)/$'
+  let board = AL_chomp(getline('.'))
+  let mx = '^\(.\{-\}\)\s\+http://\(..\{-\}\)\(/[^/]\+\)/$'
   if board !~ mx
     " foldの開閉をトグル
     normal! 0za
     return
   endif
 
-  let title = substitute(board, mx, '\1', '')
+  let title = substitute(substitute(board, mx, '\1', ''), '^\s*\([板]\)\?\s*', '', '')
   let host  = substitute(board, mx, '\2', '')
   let board = substitute(substitute(board, mx, '\3', ''), '/$', '', '')
   " デバッグメッセージ作成
@@ -1017,33 +1044,37 @@ function! s:Parse2chURL(url)
   " 表示範囲を解釈
   " 参考資料: http://pc.2ch.net/test/read.cgi/tech/1002820903/
   let range = substitute(a:url, mx, '\4', '')
-  let mx_n1 = '^/\(n\?\)\(\d\+\)-\(\d\+\)$'
-  let mx_n2 = '^/\(n\?\)\(\d\+\)-$'
-  let mx_n3 = '^/\(n\?\)-\(\d\+\)$'
-  let mx_n4 = '^/\(n\?l\?\)\(\d\+\)$'
-  let article_mode = ''
-  let article_start = ''
-  let article_end = ''
-  if range =~ mx_n1
-    let article_mode = 'r' . substitute(range, mx_n1, '\1', '')
-    let article_start = substitute(range, mx_n1, '\2', '')
-    let article_end = substitute(range, mx_n1, '\3', '')
-  elseif range =~ mx_n2
-    let article_mode = 'r' . substitute(range, mx_n2, '\1', '')
-    let article_start = substitute(range, mx_n2, '\2', '')
-    let article_end = '$'
-  elseif range =~ mx_n3
-    let article_mode = 'r' . substitute(range, mx_n3, '\1', '')
-    let article_start = 1
-    let article_end = substitute(range, mx_n3, '\2', '')
-  elseif range =~ mx_n4
-    let article_mode = 'r' . substitute(range, mx_n4, '\1', '')
-    let article_start = substitute(range, mx_n4, '\2', '')
-    let article_end = article_start
+  let mx_range = '[-0-9]\+'
+  let s:parse2ch_range_mode = ''
+  let s:parse2ch_range_start = ''
+  let s:parse2ch_range_end = ''
+  let str_range = matchstr(range, mx_range)
+  if str_range != ''
+    " 範囲表記を走査
+    let mx_range2 = '\(\d*\)-\(\d*\)'
+    if str_range =~ mx_range2
+      let s:parse2ch_range_start = substitute(str_range, mx_range2, '\1', '')
+      let s:parse2ch_range_end	 = substitute(str_range, mx_range2, '\2', '')
+      if s:parse2ch_range_start == ''
+	let s:parse2ch_range_start = 1
+      endif
+      if s:parse2ch_range_end == ''
+	let s:parse2ch_range_end = '$'
+      endif
+    else
+      " 数字しかあり得ないので可
+      let s:parse2ch_range_start = str_range
+      let s:parse2ch_range_end = str_range
+    endif
+    let s:parse2ch_range_mode = s:parse2ch_range_mode . 'r'
+    " 表示フラグ(n/l)の判定
+    if range =~ 'n'
+      let s:parse2ch_range_mode = s:parse2ch_range_mode . 'n'
+    endif
+    if range =~ 'l'
+      let s:parse2ch_range_mode = s:parse2ch_range_mode . 'l'
+    endif
   endif
-  let s:parse2ch_range_mode = article_mode
-  let s:parse2ch_range_start = article_start
-  let s:parse2ch_range_end = article_end
 
   return 1
 endfunction
@@ -1224,6 +1255,8 @@ function! s:UpdateBoardList(force)
     endif
   endwhile
   silent normal! gg
+
+  call AL_del_lastsearch()
 endfunction
 
 "
@@ -1238,21 +1271,33 @@ endfunction
 " バッファ移動用関数
 
 function! s:GetLnum_Article(num)
+  " 指定した番号の記事の先頭行番号を取得。カーソルは移動しない。
   call s:GoBuf_Thread()
+  let oldline = line('.')
   if a:num =~ '\cnext'
     let lnum = search('^\d\+  ', 'W')
   elseif a:num =~ '\cprev'
+    " 'nostartofline'対策
+    normal! k
+    let lnum = search('^\d\+  ', 'bW')
+    " 1を超えた時はヘッダ部分を表示
+    if lnum == 0
+      let lnum = 1
+    endif
+  elseif a:num =~ '\ccurrent'
+    call AL_execute("normal! j")
     let lnum = search('^\d\+  ', 'bW')
   else
     let lnum = search('^' . a:num . '  ', 'bw')
   endif
+  call AL_execute("normal! " . oldline . "G")
   return lnum
 endfunction
 
 function! s:GoThread_Article(num)
   let lnum = s:GetLnum_Article(a:num)
   if lnum
-    call AL_execute("normal! zt\<C-Y>")
+    call AL_execute("normal! ".lnum."Gzt\<C-Y>")
   endif
   return lnum
 endfunction
@@ -1520,6 +1565,8 @@ function! s:ToggleBookmark(flag)
 endfunction
 
 function! s:Thread2Bookmark(target)
+  let title = ''
+  let url = ''
   if AL_hasflag(a:target, 'thread')
     " スレッドから栞に登録
     call s:GoBuf_Thread()
@@ -1534,6 +1581,7 @@ function! s:Thread2Bookmark(target)
     else
       let title = b:title_raw
     endif
+    let url = 'http://' . b:host . '/test/read.cgi' . b:board . '/' . dat
   elseif AL_hasflag(a:target, 'threadlist')
     " スレ一覧から栞に登録
     call s:GoBuf_ThreadList()
@@ -1546,9 +1594,23 @@ function! s:Thread2Bookmark(target)
     endif
     let title = substitute(curline, mx, '\1', '')
     let dat = substitute(curline, mx, '\2', '')
+    let url = 'http://' . b:host . '/test/read.cgi' . b:board . '/' . dat
+  elseif AL_hasflag(a:target, 'boardlist')
+    " 板一覧から栞に登録
+    call s:GoBuf_BoardList()
+    let curline = getline('.')
+    let mx = '^ \(.\+\)\s\+\(http:.\+\)$'
+    if curline !~ mx
+      call s:Redraw('force')
+      call s:EchoH('ErrorMsg', s:msg_error_addnoboardlist)
+      return
+    endif
+    " [板]を付けることでスレッドの区別(スレ名が[板]で始まったら泣く?)
+    let title = '[板] ' . substitute(curline, mx, '\1', '')
+    let url = substitute(curline, mx, '\2', '')
   endif
+  " OUT: titleとurl
 
-  let url = 'http://' . b:host . '/test/read.cgi' . b:board . '/' . dat
   call s:Redraw('force')
   if 0
     echo "title=" . title . " url=" . url
@@ -1568,6 +1630,7 @@ endfunction
 function! s:OpenWriteBuffer(...)
   " フラグに応じて匿名、sageを自動設定
   let newthread = 0
+  let quoted = ''
   let username = g:chalice_username
   let usermail = g:chalice_usermail
   if a:0 > 0
@@ -1593,6 +1656,30 @@ function! s:OpenWriteBuffer(...)
     endif
     let title = b:title_raw
     let key = substitute(b:dat, '\.dat$', '', '')
+    " 現在カーソルがある記事の引用
+    if a:0 > 0 && AL_hasflag(a:1, 'quote')
+      " 引用開始位置を検索
+      let quote_start = s:GetLnum_Article('current') - 1
+      let first_article = s:GetLnum_Article(1) - 1
+      if quote_start < first_article
+	let quote_start = first_article
+	let quote_end = s:GetLnum_Article(2) - 3
+      else
+	" 引用終了位置を検索
+	let quote_end = s:GetLnum_Article('next') - 3
+      endif
+      " 範囲指定がひっくり返っている時、もしくは不正な時
+      if quote_end < 1 || quote_end < quote_start
+	let quote_end = line("$")
+      endif
+      " 文章を引用した文字列を作成(->quotedに格納)
+      let quoted = '>>' . matchstr(getline(quote_start + 1), '^\(\d\+\)') . "\<CR>"
+      let i = quote_start + 2
+      while i <= quote_end
+	let quoted = quoted . substitute(getline(i), '^.', '>', '') . "\<CR>"
+	let i = i + 1
+      endwhile
+    endif
   else
     " TODO 新規書き込み
     call s:GoBuf_ThreadList()
@@ -1635,6 +1722,7 @@ function! s:OpenWriteBuffer(...)
     let def = def . 'From: ' . username . "\<CR>"
     let def = def . 'Mail: ' . usermail . "\<CR>"
     let def = def . "--------\<CR>"
+    let def = def . quoted
     execute "normal! i" . def . "\<ESC>"
   endif
   let s:opened_write = 1
@@ -1845,7 +1933,7 @@ function! s:DoWriteBufferStub(flag)
   endif
 
   let tmpfile = tempname()
-  call s:Redraw('force')
+  redraw!
   execute "redir! > " . tmpfile 
   silent echo chunk
   redir END
@@ -1898,7 +1986,7 @@ endfunction
 function! s:FormatThreadInfo(startline, endline)
   call s:GoBuf_ThreadList()
   " バッファがスレ一覧ではなかった場合、即終了
-  if b:host == '' || b:board == ''
+  if s:opened_bookmark || b:host == '' || b:board == ''
     return
   endif
 
@@ -1937,92 +2025,45 @@ function! s:FormatThreadInfo(startline, endline)
 endfunction
 
 function! s:FormatBoard()
-  let mx_shitaraba = '^\(\d\+_\d\+\)<>\(.\{-\}\)<>\(\d\+\)<><>NULL<>$'
-  if getline(1) =~ mx_shitaraba
-    " したらばのsubject.txtを整形
-    call AL_execute('%s/' . mx_shitaraba . '/  \2 (\3)\t\t\t\t\1.dat')
-  else
-    " 2chのsubject.txtを整形
-    "call AL_execute('%s/^\(\d\+\.\%(dat\|cgi\)\)\%(<>\|,\)\(.\{-\}\)\s*(\(\d\+\))$/  \2 (\3)\t\t\t\t\1')
-    call AL_execute('%s/^\(\d\+\.\%(dat\|cgi\)\)\%(<>\|,\)\(.*\S\)\s*(\(\d\+\))$/  \2 (\3)\t\t\t\t\1')
+  " subject.txtの整形。各タイプ毎の置換パターンを用意
+  " ちょっと免疫アルゴリズム的(笑)
+  let mx_shitaraba  = '^\(\d\+_\d\+\)<>\(.\{-\}\)<>\(\d\+\)<><>NULL<>$'
+  let mx_mikage	    = '^\(\d\+\.\%(dat\|cgi\)\),\(.*\)(\(\d\+\))$'
+  let mx_2ch	    = '^\(\d\+\.dat\)<>\(.*\) (\(\d\+\))$'
+  let out_pattern   = '  \2 (\3)\t\t\t\t\1'
+
+  " どのタイプかを判定。デフォルトは2ch形式
+  let firstline = getline(1)
+  let mx = mx_2ch
+  let b:format = '2ch'
+  if firstline =~ mx_shitaraba
+    " したらばの場合
+    let mx = mx_shitaraba
+    let out_pattern = out_pattern . '.dat'
+    let b:format = 'shitaraba'
+  elseif firstline =~ mx_mikage
+    " mikageの場合
+    let mx = mx_mikage
+    let b:format = 'mikage'
   endif
+
+  " 整形を実行
+  call AL_execute('%s/' .mx. '/' .out_pattern)
   " 特殊文字潰し
   call AL_decode_entityreference('%')
+  call AL_del_lastsearch()
 
   if g:chalice_threadinfo
     call s:FormatThreadInfo(1, 0)
   endif
 endfunction
 
-function! s:Mx_formatthread_2ch()
-  " 2chスレッド、フォーマットパターン
-
-  " 書き込み時情報の切り分け
-  "   スレのdatのフォーマットは、直前に行頭に行(記事)番号を付けているので:
-  "	番号<>名前<>メール<>時間<>本文<>スレ名
-  "   となる。スレ名は先頭のみ
-  let m1 = '\(.\{-}\)<>' " \{-}は最短マッチ
-  let mx = '^\(\d\+\)<>'.m1.m1.m1.'\s*\(.\{-\}\)\s*<>\s*\(.*\)$'
-  return mx
-endfunction
-
-function! s:Mx_formatthread_modoki()
-  let m1 = '\([^,]*\),'
-  let mx = '^\(\d\+\)<>' . m1.m1.m1.m1 . '\s*\(.*\)$'
-  return mx
-endfunction
-
 function! s:FormatThread()
   " 待ってね☆メッセージ
   call s:EchoH('WarningMsg', s:msg_wait_threadformat)
-  let max = 7
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '0/'.max."\n") | endif
-
-  " 各書き込みに番号を振る
-  call AL_execute('%substitute/^/\=line(".")."<>"/')
-
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '1/'.max."\n") | endif
-
-  " スレッドフォーマットパターンを決定
-  let firstline = getline(1)
-  if firstline =~ s:Mx_formatthread_2ch()
-    let mx = s:Mx_formatthread_2ch()
-    let b:chalice_format = '2ch'
-  elseif firstline =~ s:Mx_formatthread_modoki()
-    let mx = s:Mx_formatthread_modoki()
-    let b:chalice_format = 'modoki'
-  else
-    let mx = s:Mx_formatthread_2ch()
-    let b:chalice_format = 'default'
-  endif
-  let out = '\r--------\r\1  From:\2  Date:\4  Mail:\3\r  \5'
-
-  "call AL_execute('%s/\s*<>\s*/<>/g')
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '2/'.max."\n") | endif
-  call AL_execute('%s/' . mx . '/' . out)
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '3/'.max."\n") | endif
-  " 本文の改行処理
-  call AL_execute('%s/\s*<br>\s*/\r  /g')
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '4/'.max."\n") | endif
-
-  " <A>タグ消し
-  call AL_execute('%s/<\/\?a[^>]*>//g')
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '5/'.max."\n") | endif
-  " 個人キャップの<b>タグ消し
-  call AL_execute('%s/\s*<\/\?b>//g')
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '6/'.max."\n") | endif
-  " <font>タグ消し
-  call AL_execute('%s/\c<\/\?font[^>]*>//gi')
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '7/'.max."\n") | endif
-  " 特殊文字潰し
-  if b:chalice_format == 'modoki'
-    call AL_execute('%s/＠｀/,/g')
-  endif
-  call AL_decode_entityreference('%')
-  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '8/'.max."\n") | endif
-
-  " ゴミ行消去
-  normal! gg"_dd
+  " 最終記事番号を取得
+  let b:chalice_lastnum = line('$')
+  return Dat2Text(g:chalice_verbose > 0 ? 'verbose' : '')
 endfunction
 
 "------------------------------------------------------------------------------
