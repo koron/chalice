@@ -2,7 +2,7 @@
 "
 " datutil.vim
 "
-" Last Change: 10-May-2002.
+" Last Change: 06-Jul-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -36,13 +36,18 @@ function! s:GetMx_bbsmodoki()
   return mx
 endfunction
 
-function! s:FormatArticle(linestr)
-  let retval = substitute(a:linestr, s:mx_article, '\r--------\r\1  From:\2  Date:\4  Mail:\3\r  \5', '')
+function! s:FormatArticle(linestr, ...)
+  let flags = a:0 > 0 ? a:0 : ''
+  if a:linestr =~ s:mx_article
+    let retval = substitute(a:linestr, s:mx_article, '\r--------\r\1  From:\2  Date:\4  Mail:\3\r  \5', '')
+  else
+    let retval = substitute(a:linestr, '\(\d\+\)<>\(.*\)', '\r--------\r\1  !!BROKEN!!\r  \2', '')
+  endif
   let retval = substitute(retval, ' \?<br> \?', '\r  ', 'g')
   let retval = substitute(retval, '<\/\?a[^>]*>', '', 'g')
   let retval = substitute(retval, '\s*<\/\?b>', '', 'g')
   let retval = substitute(retval, '\c<\/\?font[^>]*>', '', 'g')
-  if exists('b:dat2text_format') && b:dat2text_format ==# 'modoki'
+  if AL_hasflag(flags, 'modoki')
     let retval = substitute(retval, '＠｀', ',', 'g')
   endif
   return retval
@@ -54,9 +59,25 @@ function! s:Dat2Text_loop(linestr)
     echo s:dat2text_count .'/'. b:datutil_last_article_num
     echohl None
   endif
-  let retval = s:FormatArticle(a:linestr)
+  let retval = s:FormatArticle(a:linestr, exists('b:datutil_format') ? b:datutil_format : '')
   let s:dat2text_count = s:dat2text_count + 1
   return escape(retval, '\\')
+endfunction
+
+function! DatLine2Text(artnum, datline, ...)
+  let inval = a:artnum.'<>'.a:datline
+  let flags = a:0 > 0 ? a:1 : ''
+  let format = '2ch'
+  if AL_hasflag(flags, '2ch') || inval =~ s:GetMx_bbs2ch()
+    let s:mx_article = s:GetMx_bbs2ch()
+  elseif AL_hasflag(flags, 'modoki') || inval =~ s:GetMx_bbsmodoki()
+    let s:mx_article = s:GetMx_bbsmodoki()
+    let format = 'modoki'
+  else
+    let s:mx_article = s:GetMx_bbs2ch()
+  endif
+  let retval = s:FormatArticle(inval, format)
+  return AL_decode_entityreference(retval)
 endfunction
 
 function! Dat2Text(...)
@@ -67,13 +88,13 @@ function! Dat2Text(...)
   let firstline = '0<>' . getline(1)
   if firstline =~ s:GetMx_bbs2ch()
     let s:mx_article = s:GetMx_bbs2ch()
-    let b:dat2text_format = '2ch'
+    let b:datutil_format = '2ch'
   elseif firstline =~ s:GetMx_bbsmodoki()
     let s:mx_article = s:GetMx_bbsmodoki()
-    let b:dat2text_format = 'modoki'
+    let b:datutil_format = 'modoki'
   else
     let s:mx_article = s:GetMx_bbs2ch()
-    let b:dat2text_format = 'default'
+    let b:datutil_format = 'default'
   endif
 
   " 後で表示位置を調整するため
@@ -86,19 +107,28 @@ function! Dat2Text(...)
   endif
   " これらはdatutil側で常に設定する
   let b:datutil_last_article_num = line('$')
-  let b:datutil_title = substitute(firstline, s:mx_article, '\6', '')
+  let b:datutil_title = AL_decode_entityreference(substitute(firstline, s:mx_article, '\6', ''))
 
+  " 整形と実体参照の解決
   %s/^.*$/\=s:Dat2Text_loop(s:dat2text_count."<>".submatch(0))/
-  " ヘッダーを作成
-  call setline(1, 'Title: '. b:datutil_title)
-  let size_kb = (b:datutil_datsize / 1024) . 'KB'
-  call append(1, 'Size: ' . size_kb . (not_filesize ? ' (NOT FILESIZE)' : ''))
-  call append(2, '') " HTMLやMAILヘッダー風にしておく
-  call AL_decode_entityreference('%')
-
+  call AL_decode_entityreference_with_range('%')
   call AL_del_lastsearch()
   unlet s:dat2text_count
   unlet s:dat2text_verbose
+
+  " ヘッダーを作成
+  call setline(1, 'Title: '. b:datutil_title)
+  let size_kb = (b:datutil_datsize / 1024) . 'KB'
+  let line = 1
+  call append(line, 'Size: ' . size_kb . (not_filesize ? ' (NOT FILESIZE)' : ''))
+  let line = line + 1
+  if exists('b:host') && exists('b:board')
+    call append(line, 'Board: http://' .b:host.b:board)
+    let line = line + 1
+  endif
+  call append(line, '') " HTMLやMAILヘッダー風にしておく
+  let line = line + 1
+
   " 必要ならばカーソル位置を整形前にあった記事へ移動
   if AL_hasflag(flags, 'keepline')
     call search('^'.curline.' ', 'w')

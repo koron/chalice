@@ -2,8 +2,8 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 04-May-2002.
-" Written By:  Muraoka Taro <koron@tka.att.ne.jp>
+" Last Change: 20-Jun-2002.
+" Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
 
@@ -20,7 +20,7 @@ runtime! ftplugin/2ch.vim
 "
 setlocal fileformat=unix
 setlocal foldcolumn=1
-setlocal iskeyword=-,!,#,%,&,+,,,.,/,48-57,:,;,=,?,>,@-@,a-z,A-Z,_,~ " URLPAT
+setlocal iskeyword=-,!,#,$,%,&,+,,,.,/,48-57,:,;,=,?,>,@-@,a-z,A-Z,_,~ " URLPAT
 setlocal tabstop=8
 setlocal wrap
 let b:title = ''
@@ -47,6 +47,7 @@ nnoremap <silent> <buffer> <		:ChaliceGoArticle prev<CR>
 nnoremap <silent> <buffer> ,		:ChaliceGoArticle prev<CR>
 nnoremap <silent> <buffer> >		:ChaliceGoArticle next<CR>
 nnoremap <silent> <buffer> .		:ChaliceGoArticle next<CR>
+nnoremap <buffer> #			:ChaliceGoArticle input<CR>
 
 nnoremap <silent> <buffer> i		:ChaliceWrite<CR>
 nnoremap <silent> <buffer> I		:ChaliceWrite sage<CR>
@@ -65,7 +66,13 @@ nnoremap <silent> <buffer> p		<C-b>
 nnoremap <silent> <buffer> K		<C-y>
 nnoremap <silent> <buffer> J		<C-e>
 
+nnoremap <silent> <buffer> <C-P><C-P>	:ChalicePreview<CR>
+nnoremap <silent> <buffer> <C-P><C-C>	:ChalicePreviewClose<CR>
+nnoremap <silent> <buffer> <C-P>c	:ChalicePreviewClose<CR>
+nnoremap <silent> <buffer> <C-P><C-X>	:ChalicePreviewToggle<CR>
+
 nnoremap <silent> <buffer> <2-LeftMouse>	:ChaliceHandleJump<CR>
+nnoremap <silent> <buffer> <Space>	:ChaliceCruise thread<CR>
 
 " 番号付きの外部ブラウザを起動する
 function! s:KickNumberedExternalBrowser(exnum)

@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 17-Apr-2002.
+" Last Change: 05-Jul-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -21,6 +21,7 @@ setlocal formatoptions-=r
 setlocal tabstop=4 shiftwidth=4 softtabstop=4
 setlocal nowrap
 
+nnoremap <buffer> =			:ChaliceCheckThread write<CR>
 " èëçûÇ›ÉRÉ}ÉìÉh
 nnoremap <buffer> <C-CR>		:ChaliceDoWrite<CR>
 nnoremap <buffer> <C-C><CR>		:ChaliceDoWrite<CR>

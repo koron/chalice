@@ -1,9 +1,9 @@
-2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.4を公開します。Vimさ
+2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.5を公開します。Vimさ
 え動くのであればどのOSでも同じように操作することができます。なんか2ちゃんね
 る以外の掲示板が読めることもあるようです。
 
 - Chalice for Vim
-  http://www.kaoriya.net/dist/chalice-1.4.tar.bz2
+  http://www.kaoriya.net/dist/chalice-1.5.tar.bz2
   http://www.kaoriya.net/#CHALICE
 
 利用するのに必要なChalice以外のソフトウェア、各プラットホームに固有の情報、
@@ -16,9 +16,11 @@
 - vim.org (ソースコード他)
   http://www.vim.org/
 - Windows用 cURL (香り屋配布版)
-  http://www.kaoriya.net/dist/curl-7.9.6-win32-ssl.tar.bz2
-- MacOS X用 cURL情報 (.pkg/日本語)
+  http://www.kaoriya.net/dist/curl-7.9.8-win32-ssl.tar.bz2
+  http://www.kaoriya.net/#ARCHIVE_CURL
+- MacOS X用 cURL情報
   http://www.cosmos.ne.jp/~kaz6120/mclb/osx/curl_wget01.html
+  http://fink.sourceforge.net/index.php
 - cURLオフィシャルサイト (ソースコード他)
   http://curl.sourceforge.net/
 - Windows用 gzip

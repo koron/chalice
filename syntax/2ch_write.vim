@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 17-Apr-2002.
+" Last Change: 12-May-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -14,8 +14,7 @@ syntax match 2chWriteFrom "^From:\s*.*"
 syntax match 2chWriteMail "^Mail:\s*.*"
 syntax match 2chWriteSeparator "^--------"
 syntax match 2chWriteRef display ">>\d\+\(-\d\+\)\?"
-" URLPAT
-syntax match 2chWriteUrl display "\(h\?ttps\?\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
+execute 'syntax match 2chWriteUrl display "\(h\?ttps\?\|ftp\)://'.g:AL_pattern_class_url.'\+"'
 syntax match 2chWriteComment display "^[#Åî].*"
 syntax match 2chThreadQuote1 display "^[>ÅÑ]\([>ÅÑ][>ÅÑ]\)*[^0-9>ÅÑ].*"
 syntax match 2chThreadQuote2 display "^[>ÅÑ][>ÅÑ]\([>ÅÑ][>ÅÑ]\)*[^0-9>ÅÑ].*"

@@ -2,8 +2,8 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 24-Apr-2002.
-" Written By:  Muraoka Taro <koron@tka.att.ne.jp>
+" Last Change: 02-Jul-2002.
+" Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
 
@@ -34,14 +34,14 @@ nnoremap <silent> <buffer> <S-CR>	:ChaliceOpenThread external<CR>
 nnoremap <silent> <buffer> -<CR>	:ChaliceOpenThread external<CR>
 nnoremap <silent> <buffer> <C-CR>	:ChaliceOpenThread firstline<CR>
 nnoremap <silent> <buffer> <C-C><CR>	:ChaliceOpenThread firstline<CR>
-nnoremap <silent> <buffer> R		:ChaliceReloadThreadList<CR>
+nnoremap <silent> <buffer> r		:ChaliceReloadThreadList none<CR>
+nnoremap <silent> <buffer> R		:ChaliceReloadThreadList force<CR>
+nnoremap <silent> <buffer> <C-R>	:ChaliceReloadThreadList showabone<CR>
 nnoremap <silent> <buffer> d		:ChaliceDeleteThreadDat<CR>
+nnoremap <silent> <buffer> x		:ChaliceAboneThreadDat<CR>
 nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd threadlist<CR>
-
-"nnoremap <silent> <buffer> i		:ChaliceWrite new<CR>
-"nnoremap <silent> <buffer> I		:ChaliceWrite new,sage<CR>
-"nnoremap <silent> <buffer> a		:ChaliceWrite new,anony<CR>
-"nnoremap <silent> <buffer> A		:ChaliceWrite new,anony,sage<CR>
+nnoremap <silent> <buffer> #		:ChaliceShowNum all<CR>
+nnoremap <silent> <buffer> =		:ChaliceShowNum curline<CR>
 
 nnoremap <silent> <buffer> <2-LeftMouse>	:ChaliceOpenThread<CR>
 
