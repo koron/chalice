@@ -1,17 +1,18 @@
-2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.8を公開します。Vimさえ
+2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.9を公開します。Vimさえ
 動くのであればどのOSでも同じように操作することができます。なんか2ちゃんねる以外
 の掲示板が読めることもあるようです。
 
 - Chalice for Vim
-  http://www.kaoriya.net/dist/chalice-1.8.tar.bz2
+  http://www.kaoriya.net/dist/chalice-1.9.tar.bz2
   http://www.kaoriya.net/#CHALICE
 
-CVSによる配布も行なっております。CVSを利用することでパッチリリースへの追従が手
-軽になります。CVSサーバへのログインパスワードは不要です。パスワードを聞かれます
-が何も入力せずにEnterをタイプしてください。入手の際のコマンド例:
+Subversionによる配布も行なっております。Subversionを利用することでパッチリリー
+スへの追従が手軽になります。
 
-  cvs -d :pserver:anonymous@cvs.kaoriya.net:/anonycvs login
-  cvs -d :pserver:anonymous@cvs.kaoriya.net:/anonycvs checkout chalice
+- 最新版SubversionリポジトリのURL
+  http://cvs.kaoriya.net/svn/kaoriya/vimscript/chalice/trunk/
+- リリース版SubversionリポジトリのURL
+  http://cvs.kaoriya.net/svn/kaoriya/vimscript/chalice/tags/
 
 利用するのに必要なChalice以外のソフトウェア、各プラットホームに固有の情報、及び
 アップデート内容、その他詳しいことは総てアーカイブに同梱のREADME_j.txtを参照し
@@ -23,10 +24,10 @@ CVSによる配布も行なっております。CVSを利用することでパッチリリースへの追従が手
 - vim.org (ソースコード他)
   http://www.vim.org/
 - Windows用 cURL (香り屋配布版)
-  http://www.kaoriya.net/dist/curl-7.10.4-win32-ssl.tar.bz2
+  http://www.kaoriya.net/dist/curl-7.10.8-win32-ssl.tar.bz2
   http://www.kaoriya.net/#ARCHIVE_CURL
 - MacOS X用 cURL情報
-  http://homepage.mac.com/kmoro/pkg/curl-7.10.3.pkg.tbz
+  http://homepage.mac.com/kmoro/pkg/curl-7.10.3.pkg.tbz(リンク切れ)
 - cURLオフィシャルサイト (ソースコード他)
   http://curl.sourceforge.net/
 - Windows用 gzip

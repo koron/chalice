@@ -2,11 +2,11 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 07-Oct-2004.
+" Last Change: 31-Oct-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
-let s:version = '1.8'
+let s:version = '1.9'
 
 " 使い方
 "   chaliceディレクトリを'runtimepath'に通してからVimを起動して:Chaliceを実行
@@ -325,7 +325,7 @@ let s:msg_error_nocachedir = 'キャッシュディレクトリを作成出来ません.'
 let s:msg_error_nothread = 'スレッドが存在しないか, 倉庫入り(HTML化)待ちです.'
 let s:msg_error_accesshere = '詳細は下記URLに外部ブラウザでアクセスしてみてください.'
 let s:msg_error_newversion = 'Chaliceの新しいバージョン・パッチがリリースされています.'
-let s:msg_error_docvsupdate = 'CVS版を利用している場合はcvs update -dPで最新版を入手できます.'
+let s:msg_error_doupdate = 'Subversion版を利用している場合はsvn updateで最新版を入手できます.'
 let s:msg_error_htmlnotopen = 'スレッドが開かれていません.'
 let s:msg_error_htmlnodat = 'スレッドのdatがありません.'
 let s:msg_error_nodatdirtool = 'DATDIRへの移行ツールが見つかりません. 確認してください.'
@@ -388,7 +388,7 @@ let s:scriptdir = expand('<sfile>:p:h')
 let s:verchk_verurl = 'http://www.kaoriya.net/update/chalice-version'
 let s:verchk_path = substitute(s:scriptdir, 'plugin$', '', '').'VERSION'
 let s:verchk_interval = 86400
-let s:verchk_url_1 = 'http://www.kaoriya.net/testdir/patches-chalice/?C=M&O=D'
+let s:verchk_url_1 = s:verchk_verurl
 let s:verchk_url_2 = 'http://www.kaoriya.net/#CHALICE'
 
 " 起動フラグ
@@ -1798,7 +1798,7 @@ function! s:ChaliceOpen()
       call s:GoBuf_Thread()
       call AL_buffer_clear()
       call setline(1, 'Info: '.s:msg_error_newversion)
-      call append('$', 'Info: '.s:msg_error_docvsupdate)
+      call append('$', 'Info: '.s:msg_error_doupdate)
       call append('$', 'Info: '.s:msg_error_accesshere)
       call append('$', '')
       call append('$', '  '.s:verchk_url_1)
