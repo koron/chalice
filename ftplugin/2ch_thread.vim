@@ -20,6 +20,7 @@ runtime! ftplugin/2ch.vim
 "
 setlocal fileformat=unix
 setlocal foldcolumn=1
+setlocal iskeyword=-,!,#,%,&,+,,,.,/,48-57,:,;,=,?,>,@-@,a-z,A-Z,_,~ " URLPAT
 setlocal tabstop=8
 setlocal wrap
 let b:title = ''

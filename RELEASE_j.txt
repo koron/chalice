@@ -1,8 +1,11 @@
-2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.1を公開します。1.x系
-列は1.0のマイナーアップデートバージョンであり、大きな変更点はありません。
+2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.2を公開します。1.x系
+列は1.0のバグ修正とマイナーアップデートバージョンであり、大きな変更点はあり
+ません。特に1.2は2.0に向けての機能を少しずつ実装中だったところで、2chの事業
+化・一部有料化に伴う仕様変更に追従するために急なリリースになりました。ドキュ
+メントの不備もあるかと思いますが大目にみてください。
 
 - Chalice for Vim
-　http://www.kaoriya.net/#CHALICE
+  http://www.kaoriya.net/#CHALICE
 
 アップデートに関する詳細はアーカイブに同梱のREADME_j.txtを参照してください。
 同梱のTODO.txtは次期メジャーアップデートになる予定の2.0向けのTODOですので気
@@ -13,11 +16,11 @@ ChaliceはテキストエディタVimのVersion 6以降のプラグインとして動作します。Vim
 イナリについては、上記のChaliceと同じサイトより入手可能です。
 
 - gvim日本語Win/OS X版
-　http://www.kaoriya.net/#VIM
+  http://www.kaoriya.net/#VIM
 
 - Vim関連資料
-　http://www.vim.org/
-　http://vim.sourceforge.net/
+  http://www.vim.org/
+  http://vim.sourceforge.net/
 
 ChaliceはcURLを使用してスレデータを取得しています。cURLを持ってない方は別途
 入手してください。Windowsでは下記のcurl.exeバイナリをダウンロードします。
@@ -25,14 +28,14 @@ UNIXではソースを持ってきてコンパイル・インストールしてください。Mac OS Xでは
 最初からインストールされています。
 
 - Win用curl.exeバイナリ
-　http://www.kaoriya.net/dist/curl-7.9.1-w32.tar.bz2
+  http://www.kaoriya.net/dist/curl-7.9.1-w32.tar.bz2
 
 - cURLのサイト(ソース他)
-　http://curl.sourceforge.net/
+  http://curl.sourceforge.net/
 
 UNIXで使用するには+iconvでコンパイルした上で、qkcかnkfが必要です。変換精度の
 観点からqkcをオススメします。下記のサイトよりソースをダウンロードしてインス
 トールしてください。
 
 - qkcのサイト(ソース)
-　http://hp.vector.co.jp/authors/VA000501/index.html
+  http://hp.vector.co.jp/authors/VA000501/index.html

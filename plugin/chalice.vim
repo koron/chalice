@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 27-Dec-2001.
+" Last Change: 07-Mar-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -162,17 +162,22 @@ let s:msg_help_bookmark = '(スレの栞)  <CR>:URL決定  h/l:閉/開 <C-A>:閉じる  [編
 let s:msg_help_write = '(書き込み)  <C-CR>:書き込み実行  <C-W>c:閉じる  [編集可能]'
 
 "------------------------------------------------------------------------------
-" 定数値
+" 定数値 CONSTANT
 "   内部でのみ使用するもの
 
 " デバッグフラグ (DEBUG FLAG)
 let s:debug = 1
 
+" 2ch認証のための布石
+let s:user_agent = 'Monazilla/1.00 Chalice/1.2e'
+let s:user_agent_enable = 1
 " 2ch依存データ
 let s:encoding = 'cp932'
+let s:host = 'www.2ch.net'
+let s:remote = '2ch.html'
 " 2chのメニュー取得用初期データ
-let s:menu_host = 'www.2ch.net'
-let s:menu_remotepath = 'newbbsmenu.html'
+let s:menu_host = 'www6.ocn.ne.jp'
+let s:menu_remotepath = '~mirv/2chmenu.html'
 let s:menu_localpath = 'bbsmenu'
 " ウィンドウ識別子
 let s:buftitle_boardlist  = 'Chalice_2ちゃんねる_板一覧'
@@ -250,14 +255,14 @@ endfunction
 function! s:HandleURL(url, flag)
   " 通常のURLだった場合、無条件で外部ブラウザに渡している。URLの形をみて2ch
   " ならば内部で開く。
-  if a:url !~ '\(http\|ftp\)://[-#%&+,./0-9:;=?A-Za-z_~]\+'
+  if a:url !~ '\(http\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+' " URLPAT
     return 0
   endif
-  if a:flag =~ '\c\<external\>' || !s:Parse2chURL(a:url)
+  if s:DoesFlagHaveTarget(a:flag, '\cexternal') || !s:Parse2chURL(a:url)
     " 強制的に外部ブラウザを使用するように指定されたかURLが、2chではない時
     call s:OpenURL(a:url)
   else
-    if a:flag !~ '\c\<noaddhist\>'
+    if !s:DoesFlagHaveTarget(a:flag, '\cnoaddhist')
       call s:AddHistoryJump(s:ScreenLine(), line('.'))
     endif
 
@@ -286,7 +291,7 @@ function! s:HandleURL(url, flag)
       endif
     endif
 
-    if a:flag !~ '\c\<noaddhist\>'
+    if !s:DoesFlagHaveTarget(a:flag, '\cnoaddhist')
       call s:AddHistoryJump(s:ScreenLine(), line('.'))
     endif
   endif
@@ -303,8 +308,10 @@ function! s:OpenURL(url)
   endif
   let url = escape(a:url, '%#')
   if has('win32')
+    " URLをクリップボードへ放り込む
+    let @* = url
     " Windows環境での外部ブラウザ起動
-    if !has('win95') && url !~ '&'
+    if !has('win95') && url !~ '[&!]'
       " NT系ではこっちの方がうまく行くことが多い
       silent execute '!start /min cmd /c start ' . url
       if s:debug | let @a = '!start /min cmd /c start ' . url | endif
@@ -315,6 +322,10 @@ function! s:OpenURL(url)
     let retval = 1
   elseif g:chalice_exbrowser != ''
     " 非Windows環境での外部ブラウザ起動
+    "
+    " 次行の置換で'&'が'%URL%'に置換わるのを防ぐ。
+    " '~'が直前の置換パターンで置換わるのを防ぐ
+    let url = escape(url, '&~')
     let excmd = substitute(g:chalice_exbrowser, '%URL%', url, 'g')
     call s:DoExternalCommand(excmd)
     let retval = 1
@@ -335,13 +346,19 @@ endfunction
 "
 function! s:HandleJump(flag)
   call s:GoBuf_Thread()
-  let context = getline('.')
   let mx1 = '>>\(\(\d\+\)\(-\d\+\)\?\)'
-  let mx2 = '\(\(h\?ttp\|ftp\)://[-#%&+,./0-9:;=?A-Za-z_~]\+\)'
+  let mx2 = '\(\(h\?ttp\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+\)' " URLPAT
+
+  " カーソル下のリンクを探し出す。なければ後方へサーチ
+  let context = expand('<cword>')
+  if context !~ mx1 && context !~ mx2
+    let context = strpart(getline('.'), col('.') - 1)
+  endif
+
   if context =~ mx1
     " スレの記事番号だった場合
     let num = substitute(matchstr(context, mx1), mx1, '\2', '')
-    if a:flag =~ '\c\<internal\>'
+    if s:DoesFlagHaveTarget(a:flag, '\cinternal')
       let oldsc = s:ScreenLine()
       let oldcur = line('.')
       let lnum = s:GoThread_Article(num)
@@ -352,7 +369,7 @@ function! s:HandleJump(flag)
 	" 参照先をヒストリに入れる
 	call s:AddHistoryJump(s:ScreenLine(), line('.'))
       endif
-    elseif a:flag =~ '\c\<external\>'
+    elseif s:DoesFlagHaveTarget(a:flag, '\cexternal')
       if b:host != '' && b:board != '' && b:dat != ''
 	let num = substitute(matchstr(context, mx1), mx1, '\1', '')
 	call s:OpenURL('http://' . b:host . '/test/read.cgi' . b:board . '/' . substitute(b:dat, '\.dat$', '', '') . '/' . num . 'n')
@@ -396,7 +413,7 @@ function! s:UpdateThread(title, host, board, dat, flag)
   let remote = b:board . '/dat/' . b:dat
   let prevsize = 0
   " スレッドの内容をダウンロード
-  if !filereadable(local) || a:flag !~ '\c\<noforce\>'
+  if !filereadable(local) || !s:DoesFlagHaveTarget(a:flag, '\cnoforce')
     " ファイルの元のサイズを覚えておく
     if filereadable(local)
       let prevsize = getfsize(local)
@@ -493,6 +510,10 @@ endfunction
 " 暫定的に固まった関数群 
 " FIXED FUNCTIONS
 
+function! s:DoesFlagHaveTarget(flag, target)
+  return a:flag =~ '\(^\|,\)' . a:target .'\(,\|$\)'
+endfunction
+
 " スクリーンに表示されている先頭の行番号を取得する
 function! s:ScreenLine()
   let wline = winline() - 1
@@ -564,7 +585,7 @@ function! s:ChaliceClose(flag)
   if s:opened_bookmark
     call s:CloseBookmark()
   endif
-  if a:flag =~ '\<all\>'
+  if s:DoesFlagHaveTarget(a:flag, 'all')
     execute "qall!"
   endif
   let s:opend = 0
@@ -620,6 +641,10 @@ function! s:CheckEnvironment()
   else
     let path = substitute($PATH, ':', ',', 'g')
   endif
+
+  " 'wildignore'を退避
+  let wildignore = &wildignore
+  set wildignore=
   
   " cURLのパスを取得
   let curl_exe = 'curl' . (has('win32') ? '.exe' : '')
@@ -660,8 +685,15 @@ function! s:CheckEnvironment()
     let s:cmd_gzip = 'gzip'
   endif
 
+  " 退避してあった'wildignore'を復帰
+  let &wildignore = wildignore
+
   " ディレクトリ情報構築
-  let s:dir_cache = g:chalice_basedir . '/cache/'
+  if exists('g:chalice_cachedir') && isdirectory(g:chalice_cachedir)
+    let s:dir_cache = substitute(g:chalice_cachedir, '[^\/]$', '&/', '')
+  else
+    let s:dir_cache = g:chalice_basedir . '/cache/'
+  endif
   if g:chalice_bookmark == ''
     let g:chalice_bookmark = g:chalice_basedir . '/chalice.bmk'
   endif
@@ -740,7 +772,7 @@ endfunction
 "
 function! s:DoExternalCommand(cmd)
   let extcmd = a:cmd
-  if has('win32') && &shell =~ '\c\<cmd\>'
+  if has('win32') && &shell =~ '\ccmd'
     let extcmd = '"' . extcmd . '"'
   endif
   if g:chalice_verbose < 1
@@ -765,7 +797,7 @@ endfunction
 function! s:OpenThread(...)
   let flag = (a:0 > 0) ? a:1 : 'internal'
   let curline = getline('.')
-  let mx2 = '\(http://[-#%&+,./0-9:;=?A-Za-z_~]\+\)'
+  let mx2 = '\(http://[-!#%&+,./0-9:;=?@A-Za-z_~]\+\)' " URLPAT
 
   if curline =~ s:mx_thread_dat
     let host = b:host
@@ -782,7 +814,7 @@ function! s:OpenThread(...)
   endif
 
   call s:HandleURL(url, flag . ',noaddhist')
-  if flag =~ '\c\<firstline\>'
+  if flag =~ '\cfirstline'
     normal! gg
   endif
   call s:AddHistoryJump(s:ScreenLine(), line('.'))
@@ -810,7 +842,7 @@ function! s:OpenBoard(...)
     let mes = mes . "title=" . title . " host=" . host . " board=" . board
     execute "normal! i" . mes "\<CR>"
   else
-    if a:0 > 0 && a:1 =~ '\<external\>'
+    if a:0 > 0 && a:1 =~ 'external'
       return s:OpenURL('http://' . host . board . '/')
     endif
     call s:UpdateBoard(title, host, board, 0)
@@ -883,13 +915,13 @@ function! s:OpenAllChaliceBuffers()
   let b:title = s:prefix_thread
 
   " 板一覧用バッファを開く
-  silent! execute "15vnew! " . s:buftitle_boardlist
+  silent! execute "topleft 15vnew! " . s:buftitle_boardlist
   setlocal filetype=2ch_boardlist
   let b:title = s:label_boardlist
 
   " スレッド一覧用バッファ(==板)を開く
   call s:GoBuf_Thread()
-  silent! execute "10new! " . s:buftitle_threadlist
+  silent! execute "leftabove 10new! " . s:buftitle_threadlist
   setlocal filetype=2ch_threadlist
   let b:title = s:prefix_board
 endfunction
@@ -911,12 +943,17 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
   let fq = s:GetFileQuote()
   let opts = g:chalice_curl_options
 
+  " 生dat読み込み制限に対応
+  if s:user_agent_enable
+    let opts = opts . ' -A ' .fq. s:user_agent .fq
+  endif
+
   " 継続ロードのオプション設定
-  if a:flag =~ '\<continue\>'
+  if s:DoesFlagHaveTarget(a:flag, 'continue')
     let size = getfsize(local)
     if size > 0
       let continued = 1
-      let opts = ' ' . opts . '-C ' . size
+      let opts = opts . ' -C ' . size
     endif
   endif
 
@@ -949,13 +986,36 @@ function! s:UpdateBoardList(force)
   call s:GoBuf_BoardList()
   let b:title = s:label_boardlist
 
-  let local = s:dir_cache . s:menu_localpath
-  " 板一覧の読み込みと整形
-  if a:force || !filereadable(local) || localtime() - getftime(local) > g:chalice_reloadinterval_boardlist
-    call s:HttpDownload(s:menu_host, s:menu_remotepath, local, '')
+  let local_menu = s:dir_cache . s:menu_localpath
+  " 板一覧の読み込み
+  if a:force || !filereadable(local_menu) || localtime() - getftime(local_menu) > g:chalice_reloadinterval_boardlist
+    " 2chのフレームを読み込んでframedataに格納
+    let local_frame = tempname()
+    call s:HttpDownload(s:host, s:remote, local_frame, '')
+    silent! execute '%delete _'
+    silent! execute 'read ' . local_frame
+    silent! execute "%join"
+    let framedata = getline('.')
+    silent! execute '%delete _'
+    call delete(local_frame)
+
+    " frameタグの解釈
+    let framedata = substitute(framedata, '^.*\(frame\>[^>]*name="\?menu"\?[^>]*\)>.*$', '\1', '')
+    let mx = '^.*src="\?http://\([^/]\+\)/\([^" ]*\)"\?.*$'
+    let menu_host = substitute(framedata, mx, '\1', '')
+    let menu_remotepath = substitute(framedata, mx, '\2', '')
+    if menu_host == ''
+      let menu_host = s:menu_host
+      let menu_remotepath = s:menu_remotepath
+    endif
+
+    " メニューファイルの読込
+    call s:HttpDownload(menu_host, menu_remotepath, local_menu, '')
   endif
+
+  " 板一覧の整形
   call s:ClearBuffer()
-  silent! execute 'read ' . local
+  silent! execute 'read ' . local_menu
   " 改行<BR>を本当の改行に
   silent! execute "%s/\\c<br>/\r/g"
   " カテゴリと板へのリンク以外を消去
@@ -967,6 +1027,12 @@ function! s:UpdateBoardList(force)
   " 「2ch総合案内」を削除…本当はちゃんとチェックしなきゃダメだけど。
   silent! execute '1,/^■/-1delete _'
   "normal! gg"_dd0
+
+  " テスト鯖へのリンクを板一覧に埋め込む
+  if s:debug
+    call append(0, "■テスト鯖")
+    call append(1, " ばたー\t\t\t\thttp://tora3.2ch.net/butter/")
+  endif
 
   " folding作成
   silent! normal! gg
@@ -1002,9 +1068,9 @@ endfunction
 
 function! s:GetLnum_Article(num)
   call s:GoBuf_Thread()
-  if a:num =~ '\c\<next\>'
+  if a:num =~ '\cnext'
     let lnum = search('^\d\+  ', 'W')
-  elseif a:num =~ '\c\<prev\>'
+  elseif a:num =~ '\cprev'
     let lnum = search('^\d\+  ', 'bW')
   else
     let lnum = search('^' . a:num . '  ', 'bw')
@@ -1158,9 +1224,9 @@ endfunction
 " 履歴をジャンプ
 function! s:DoHistoryJump(flag)
   let data = 0
-  if a:flag =~ '\c\<next\>'
+  if s:DoesFlagHaveTarget(a:flag, '\cnext')
     let data = s:JumplistNext()
-  elseif a:flag =~ '\c\<prev\>'
+  elseif s:DoesFlagHaveTarget(a:flag, '\cprev')
     let data = s:JumplistPrev()
   endif
 
@@ -1294,7 +1360,7 @@ function! s:AddBookmark(title, url)
 
   " URLをバッファに書込む
   if url != ''
-    call append(0, ' ' . a:title . "\t\t\t\t" . url)
+    call append(0, a:title . "\t\t\t\t" . url)
   endif
 
   execute "normal! " . winnum . "\<C-W>\<C-W>"
@@ -1313,15 +1379,15 @@ function! s:ToggleBookmark(flag)
     call s:GoBuf_ThreadList()
     execute "normal! " . lnum . "G0"
   endif
-  if a:flag =~ '\<thread\>'
+  if s:DoesFlagHaveTarget(a:flag, 'thread')
     call s:GoBuf_Thread()
-  elseif a:flag =~ '\<threadlist\>'
+  elseif s:DoesFlagHaveTarget(a:flag, 'threadlist')
     call s:GoBuf_ThreadList()
   endif
 endfunction
 
 function! s:Thread2Bookmark(target)
-  if a:target =~ '\<thread\>'
+  if a:target =~ 'thread'
     " スレッドから栞に登録
     call s:GoBuf_Thread()
     if b:host == '' || b:board == '' || b:dat == ''
@@ -1335,7 +1401,7 @@ function! s:Thread2Bookmark(target)
     else
       let title = b:title_raw
     endif
-  elseif a:target =~ '\<threadlist\>'
+  elseif a:target =~ 'threadlist'
     " スレ一覧から栞に登録
     call s:GoBuf_ThreadList()
     let curline = getline('.')
@@ -1374,14 +1440,14 @@ function! s:OpenWriteBuffer(...)
   let username = g:chalice_username
   let usermail = g:chalice_usermail
   if a:0 > 0
-    if a:1 =~ '\<anony\>'
+    if a:1 =~ 'anony'
       let username = g:chalice_anonyname
       let usermail = ''
     endif
-    if a:1 =~ '\<sage\>'
+    if a:1 =~ 'sage'
       let usermail = 'sage'
     endif
-    if a:1 =~ '\<new\>'
+    if a:1 =~ 'new'
       let newthread = 1
     endif
   endif
@@ -1459,7 +1525,7 @@ function! s:DoWriteBuffer(flag)
   let write_result =  s:DoWriteBufferStub(a:flag)
 
   " 書き込み後のバッファ処理
-  if a:flag =~ '\c\<closing\>'
+  if s:DoesFlagHaveTarget(a:flag, '\cclosing')
     let s:opened_write = 0
   elseif write_result != 0
     let s:opened_write = 0
@@ -1480,7 +1546,7 @@ function! s:DoWriteBuffer(flag)
 endfunction
 
 function! s:DoWriteBufferStub(flag)
-  let force_close = a:flag =~ '\c\<closing\>'
+  let force_close = s:DoesFlagHaveTarget(a:flag, '\cclosing')
   call s:GoBuf_Write()
   redraw!
 
@@ -1565,6 +1631,9 @@ function! s:DoWriteBufferStub(flag)
     let message = message . "\n" . getline(curline)
     let curline = curline + 1
   endwhile
+  " 半角スペースを&nbsp;に置換
+  let message = substitute(message, ' ', '\&nbsp;', 'g')
+
   if 0
     echo "RAW MESSAGE=".message
     echo "MESSAGE=" . s:URLEncode(message)
@@ -1641,6 +1710,9 @@ function! s:DoWriteBufferStub(flag)
   " 起動オプションの構築→cURLの実行
   let fq = s:GetFileQuote()
   let opts = g:chalice_curl_options
+  if s:user_agent_enable
+    let opts = opts . ' -A ' .fq. s:user_agent .fq
+  endif
   let opts = opts . ' -b NAME= -b MAIL='
   let opts = opts . ' -d @' . fq .tmpfile . fq
   let opts = opts . ' -e http://' . b:host . '/' . b:bbs . '/index2.html'
@@ -1660,11 +1732,11 @@ endfunction
 " FILENAMES
 " ファイル名の生成
 
-function s:GenerateLocalDat(host, board, dat)
+function! s:GenerateLocalDat(host, board, dat)
   return s:dir_cache . 'dat_' . a:host . substitute(a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.dat$', '', '')
 endfunction
 
-function s:GenerateLocalSubject(host, board)
+function! s:GenerateLocalSubject(host, board)
   return s:dir_cache . 'subject_' . a:host . substitute(a:board, '/', '_', 'g')
 endfunction
 
@@ -1684,7 +1756,7 @@ function! s:FormatThreadInfo(startline, endline)
 
   let i = a:startline
   let lastline = a:endline ? a:endline : line('$')
-  let @a = 'i='.i.' lastline='.lastline
+  if s:debug | let @a = 'i='.i.' lastline='.lastline | endif
 
   " 各スレのdatファイルが存在するかチェックし、存在する場合には最終取得時刻
   " をチェックし、それによって強調の仕方を変える。
@@ -1735,6 +1807,8 @@ endfunction
 function! s:FormatThread()
   " 待ってね☆メッセージ
   call s:EchoH('WarningMsg', s:msg_wait_threadformat)
+  let max = 7
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '0/'.max) | endif
 
   " 各書き込みに番号を振る
   let i = 1
@@ -1743,37 +1817,42 @@ function! s:FormatThread()
     call setline(i, i . '<>' . getline(i))
     let i = i + 1
   endwhile
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '1/'.max."\n") | endif
 
   " 書き込み時情報の切り分け
   "   スレのdatのフォーマットは、直前に行頭に行(記事)番号を付けているので:
   "	番号<>名前<>メール<>時間<>本文<>スレ名
   "   となる。スレ名は先頭のみ
   if 1
-    " 速いがスタックエラーで落ちる可能性がある。諸刃の剣。
-    " それでも落ちることは少なくなったはずだが…
-    let m1 = '\(\%([^<]\|<[^<>]\)*\)<>' " (<>を含まない文字列)<> にマッチ
-    let m2 = '\(.*\)<>'
-    let mx = '^\(\d\+\)<>' .m1.m1.m1.m2. '\(.*\)$'
+    " \{-}の使用でかなり速くなっていると思われるが…リファレンスコードも残す
+    let m1 = '\s*\(.\{-}\)\s*<>' " \{-}は最短マッチ
+    let mx = '^' .m1.m1.m1.m1.m1. '\s*\(.*\)$'
   else
     " 遅いがスタックエラーでは落ちない
     let mx = '^\(\d\+\)<>\(.*\)<>\(.*\)<>\(.*\)<>\(.*\)<>\(.*\)$'
   endif
   let out = '\r--------\r\1  From:\2  Date:\4  Mail:\3\r  \5'
-  silent! execute '%s/\s*<>\s*/<>/g'
+  "silent! execute '%s/\s*<>\s*/<>/g'
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '2/'.max."\n") | endif
   silent! execute '%s/' . mx . '/' . out
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '3/'.max."\n") | endif
   " 本文の改行処理
   silent! execute '%s/\s*<br>\s*/\r  /g'
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '4/'.max."\n") | endif
 
   " <A>タグ消し
   silent! execute '%s/<\/\?a[^>]*>//g'
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '5/'.max."\n") | endif
   " 個人キャップの<b>タグ消し
   silent! execute '%s/\s*<\/\?b>//g'
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '6/'.max."\n") | endif
   " 特殊文字潰し
-  silent! execute '%s/&amp;/\&/g'
   silent! execute '%s/&gt;/>/g'
   silent! execute '%s/&lt;/</g'
   silent! execute '%s/&quot;/"/g'
   silent! execute '%s/&nbsp;/ /g'
+  silent! execute '%s/&amp;/\&/g'
+  if g:chalice_verbose > 0 | call s:EchoH('WarningMsg', '7/'.max."\n") | endif
 
   " ゴミ行消去
   normal! gg"_dd

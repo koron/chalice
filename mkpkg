@@ -1,6 +1,6 @@
 #!/bin/csh
 #
-# Last Change: 25-Nov-2001.
+# Last Change: 07-Feb-2002.
 # Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 if ($1 == '') then
@@ -14,6 +14,7 @@ set pkgdir = "chalice-$1"
 cd ..
 rm -rf $pkgdir
 cvs export -D now -d $pkgdir proj/chalice
-qkc -s -u ${pkgdir}/*/*.vim
+rm -rf $pkgdir/tools # dolibÇÕégÇ¡ÇƒÇ»Ç¢ÇÃÇ≈è¡ãé
+qkc -s -u ${pkgdir}/*/*.vim ${pkgdir}/install.sh ${pkgdir}/mkpkg
 
 tar cyvf "${pkgdir}.tar.bz2" $pkgdir

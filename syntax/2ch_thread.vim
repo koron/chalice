@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 19-Nov-2001.
+" Last Change: 22-Jan-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -15,7 +15,8 @@ syntax match 2chThreadFrom display "From:.*\(  Date:\)\@="
 syntax match 2chThreadDate display "Date:.*\(  Mail:\)\@="
 syntax match 2chThreadMail display "Mail:.*"
 syntax match 2chThreadRef display ">>\d\+\(-\d\+\)\?"
-syntax match 2chThreadUrl display "\(h\?ttp\|ftp\)://[-#%&+,./0-9:;=?A-Za-z_~]\+"
+" URLPAT
+syntax match 2chThreadUrl display "\(h\?ttp\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
 syntax match 2chThreadComment display "^  \(#\|Åî\).*"
 syntax match 2chThreadQuote display "^  [>ÅÑ][^>ÅÑ].*"hs=s+2
 

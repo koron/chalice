@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 28-Nov-2001.
+" Last Change: 12-Jan-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -15,6 +15,7 @@ endif
 " ã§í ê›íËÇÃì«Ç›çûÇ›
 runtime! ftplugin/2ch.vim
 
+setlocal foldcolumn=0
 setlocal number
 setlocal tabstop=32
 let b:title = ''

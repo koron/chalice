@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 28-Nov-2001.
+" Last Change: 12-Jan-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -15,7 +15,9 @@ endif
 " 共通設定の読み込み
 runtime! ftplugin/2ch.vim
 
+setlocal foldcolumn=1
 setlocal nonumber
+setlocal shiftwidth=1
 
 nnoremap <silent> <buffer> l		zo
 nnoremap <silent> <buffer> h		zc
@@ -27,6 +29,7 @@ nnoremap <silent> <buffer> h		zc
 nunmap <buffer> ~
 nunmap <buffer> d
 nunmap <buffer> p
+nunmap <buffer> u
 
 "
 " folding設定
@@ -38,10 +41,47 @@ let s:sid = substitute(maparg('<SID>xx'), 'xx$', '', '')
 unmap <SID>xx
 
 function! s:FoldText()
-  let entry = v:foldend - v:foldstart
-  return substitute(getline(v:foldstart), '^■', '□', ''). ' (' . entry . ') '
+  " カテゴリ内のエントリ(URL)数を数え上げる
+  let entry = 0
+  let line = v:foldstart
+  while line <= v:foldend
+    if getline(line) !~ '^\(\s*\)■'
+      let entry = entry + 1
+    endif
+    let line = line + 1
+  endwhile
+
+  let topline = getline(v:foldstart)
+  let entry = ' (' . entry . ') '
+  if topline !~ '^\s*■'
+    return substitute(topline, '\s\S.*$', '□【無名カテゴリ】' . entry, '')
+  else
+    return substitute(topline, '^\(\s*\)■', '\1□', '') . entry
+  endif
+endfunction
+
+function! s:FoldLevel(lnum)
+  let line = getline(a:lnum)
+  let mx = '^\(\s*\)\(\S\).*'
+  let level = strlen(substitute(line, mx, '\1', ''))
+  let foldmark = substitute(line, mx, '\2', '')
+  if foldmark ==# '■'
+    return '>' . (level + 1)
+  else
+    return level
+  endif
+endfunction
+
+" より高度なfoldのテスト (未使用)
+function! s:FoldLevel2(lnum)
+  let level = FoldLevel(a:lnum)
+  if level !~ '^>'
+    let nextlevel = FoldLevel(a:lnum + 1)
+    return level !=# nextlevel ? '<' . level : level
+  endif
+  return level
 endfunction
 
 execute 'setlocal foldtext=' . s:sid .'FoldText()'
+execute 'setlocal foldexpr=' . s:sid . 'FoldLevel(v:lnum)'
 setlocal foldmethod=expr
-setlocal foldexpr=getline(v:lnum)=~'^■'?'>1':'='
