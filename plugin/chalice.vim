@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 21-Dec-2004.
+" Last Change: 21-Feb-2005.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -1072,9 +1072,12 @@ function! s:DatDownload_2ch(host, remote, local_dat, flags)
     silent! bwipeout!
     " 仮ダウンロード実行
     let tmpfile = tempname()
-    let retval = s:HttpDownload2(s:GenerateHostPathUri(a:host, a:remote), tmpfile, continue_at)
+    let retval = s:HttpDownload2(s:GenerateHostPathUri(a:host, a:remote), tmpfile, continue_at, a:local_dat)
     " ダウンロードの結果を検証
-    if retval == 206
+    if retval == 304
+      call delete(tmpfile)
+      return retval
+    elseif retval == 206
       " 最後の1行が正しく被っているかチェックする
       "	  被っている→DAT更新
       "	  被ってない→ファイルを消して全取得へ
@@ -2159,7 +2162,7 @@ function! s:OpenAllChaliceBuffers()
   let b:title = s:prefix_board
 endfunction
 
-function! s:HttpDownload2(uri, filename, continueat)
+function! s:HttpDownload2(uri, filename, continueat, timebase)
   if s:dont_download
     return 200
   endif
@@ -2176,6 +2179,9 @@ function! s:HttpDownload2(uri, filename, continueat)
   let tmp_head = tempname()
   let opts = opts.' -D '.AL_quote(tmp_head)
   let opts = opts.' -o '.AL_quote(a:filename)
+  if filereadable(a:timebase)
+    let opts = opts.' -z '.AL_quote(a:timebase)
+  endif
   let opts = opts.' '.AL_quote(a:uri)
   " ダウンロード実行
   let cmd = s:cmd_curl.' '.opts
@@ -3050,6 +3056,15 @@ endfunction
 let s:last_username = ''
 let s:last_usermail = ''
 
+function! s:GetWriteTime(url, host, bbs, key)
+  if a:host =~ s:mx_servers_jbbstype
+    return localtime()
+  else
+    " TODO: Get time from 2ch.
+    return localtime()
+  endif
+endfunction
+
 "
 " 書き込み用バッファを開く
 "
@@ -3151,7 +3166,7 @@ function! s:OpenWriteBuffer(...)
   " 書き込むべきスレのURLを作成しバッファ変数に保存する
   let b:url = 'http://'.host.'/test/read.cgi/'.bbs.'/'.key
   " hiddenなtimeパラメータの生成を、書き込み時ではなくバッファ作成時にする
-  let b:gentime = localtime()
+  let b:gentime = s:GetWriteTime(b:url, host, bbs, key)
 
   call s:Redraw('')
 
@@ -3342,18 +3357,6 @@ function! s:DoWriteBufferStub(flag)
     let message = substitute(message, '\(^\|'."\n".'\| \) ', '\1\&nbsp;', 'g')
   endif
 
-  " 書き込みデータチャンク作成
-  let key = b:key
-  let flags = ''
-  if newthread
-    let key = localtime()
-    let flags = flags . 'new'
-  endif
-  let chunk = s:CreateWriteChunk(b:host, b:bbs, key, title, name, mail, message, flags)
-  if chunk == ''
-    return 0
-  endif
-
   " 書き込み前の最後の確認
   echohl Question
   " chalice_noquery_writeが設定されている時には有無を言わさず書込む。Chalice
@@ -3385,6 +3388,18 @@ function! s:DoWriteBufferStub(flag)
 	return 0
       endif
     endif
+  endif
+
+  " 書き込みデータチャンク作成
+  let key = b:key
+  let flags = ''
+  if newthread
+    let key = localtime()
+    let flags = flags . 'new'
+  endif
+  let chunk = s:CreateWriteChunk(b:host, b:bbs, key, title, name, mail, message, flags)
+  if chunk == ''
+    return 0
   endif
 
   " 書き込み結果を格納する一時ファイル
