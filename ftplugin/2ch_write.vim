@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 05-Jul-2002.
+" Last Change: 18-Sep-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -41,3 +41,14 @@ nunmap <buffer> M
 nunmap <buffer> <Space>
 nunmap <buffer> <S-Space>
 nunmap <buffer> p
+
+function! s:RevertLastMessage()
+  if !exists('g:chalice_lastmessage') || g:chalice_lastmessage == ''
+    return
+  endif
+  let save_reg = @"
+  let @" = g:chalice_lastmessage
+  normal! Gp
+  let @" = save_reg
+endfunction
+nnoremap <buffer><silent> <C-S> :call <SID>RevertLastMessage()<CR>

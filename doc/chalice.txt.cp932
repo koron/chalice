@@ -1,4 +1,4 @@
-*chalice.txt*	www.2ch.net browser.  Last Change: 14-Jul-2002.
+*chalice.txt*	www.2ch.net browser.  Last Change: 24-Dec-2002.
 
 
 		Chalice 取扱説明書    by MURAOKA Taro (KoRoN)
@@ -128,7 +128,7 @@ a,A			匿名書き込みモードへ(Aはsage)
 	--------
 
 始めから挿入モードになっているので、適宜入力してください。挿入モードを抜けて、
-<C-CR>(または<C-C><CR>)を押すと、カキコ実行の確認を求められます。
+<C-CR>(または:q<CR>)を押すと、カキコ実行の確認を求められます。
 
 	本当に書き込みますか?(yes/no/cancel): 
 
@@ -483,12 +483,12 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	    offline	オフラインモードで起動する
 	    nohelp	自動ヘルプインストール機能を使用しない
 
-+ chalice_preview	number (省略値 1)
+- chalice_preview	number (省略値 1)
 	自動プレビューを利用するためのフラグ。 >
 		let chalice_preview = 0
 <	(解説)自動プレビューを利用しない(手動は可)。
 
-+ chalice_previewflags	string (省略値 "")
+- chalice_previewflags	string (省略値 "")
 	プレビューの挙動を規定するフラグ。 >
 		let chalice_previewflags = 'autoclose'
 <	(解説)プレビューをスレの上部に表示する。
@@ -497,12 +497,12 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	    above	プレビューをスレの上に表示する
 	    autoclose	現在位置にアンカーがなければプレビューを閉じる
 
-+ chalice_noredraw	number (省略値 0)
+- chalice_noredraw	number (省略値 0)
 	redrawによる再描画を抑制する。 >
 		let chalice_noredraw = 1
 <	(解説)遅い端末での画面のチラツキを減らす。
 
-+ chalice_writeoptions	string (省略値 "amp,zenkaku")
+- chalice_writeoptions	string (省略値 "amp,zenkaku")
 	書き込み時に展開する特殊文字を指定する。 >
 		let chalice_writeoptions = "amp,zenkaku,nbsp"
 <	(解説)書き込み文字数制限で書き込めない場合などに利用し、半角空白2文字
@@ -510,7 +510,7 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	する。デフォルトでは&amp;と&nbsp;の展開のみ("amp,nbsp")が指定され、全
 	角空白への展開はおこなわれない。
 
-+ chalice_autonumcheck	number (省略値 0)
+- chalice_autonumcheck	number (省略値 0)
 	板を移動した時に自動的に新着チェックを行なう。 >
 		let chalice_autonumcheck = 1
 <	環境によっては非常に動作速度が遅くなるので注意が必要。
@@ -520,6 +520,11 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_verbose = 1
 <	(解説)1以上に設定すると外部コマンドの実行状況を観察できる。
 
++ chalice_titlestring	string (省略値 "")
+	Chalice実行時にVimのタイトルバーに表示される文字列を変更する。お仕事中
+	に利用していて、タスクバーに「2ちゃんねる」の文字が踊っているのが心苦
+	しいユーザさん向け機能。
+	
 
 カスタマイズ例					*chalice-custom-example*
 --------------

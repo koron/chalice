@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 13-Jul-2002.
+" Last Change: 15-Sep-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -20,7 +20,7 @@ runtime! ftplugin/2ch.vim
 "
 setlocal fileformat=unix
 setlocal foldcolumn=1
-setlocal iskeyword=-,!,#,$,%,&,+,,,.,/,48-57,:,;,=,?,>,@-@,a-z,A-Z,_,~ " URLPAT
+setlocal iskeyword=-,!,#,$,%,&,*,+,,,.,/,48-57,:,;,=,?,>,@-@,a-z,A-Z,_,~ " URLPAT
 setlocal tabstop=8
 setlocal wrap
 let b:title = ''

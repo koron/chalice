@@ -1,10 +1,10 @@
  vi:set ts=8 sts=4 sw=4 tw=0 et ft=memo:
- Last Change: 16-Jul-2002.
+ Last Change: 24-Dec-2002.
 
-TODO 1.5+
+TODO 1.7+
     nkf/qkcのサポートを打ち切る。
 
-DONE 1.5+
+DONE 1.7+
     HTMLからDATの再構築(暫定)
     AAを表示するための仕組み(chalice.html.patch)取り込み
     AL_open_url()の処理に"!"を使えるようにする。
@@ -19,7 +19,7 @@ TODO 2.0 (*は一部完了、もしくは作業中)
     (全体)      一般的な関数をライブラリ化(*)
     (全体)      dat読みができなくなる問題への対応(認証へ対応)
     (スレ一覧)  subback.htmlを使った一覧の取得
-    (スレッド)  read.cgiだけを使ったdatの取得(dat再構築)
+    (スレッド)  read.cgiだけを使ったdatの取得(dat再構築)(*)
     (スレッド)  416にはなにかある
     (ツール)    スレの内容を.txtにして保存する仕組み、及びそのfiletype類(*)
     (書き込み)  foldingを利用した簡易表示(スレ一覧)

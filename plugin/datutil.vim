@@ -2,7 +2,7 @@
 "
 " datutil.vim
 "
-" Last Change: 14-Jul-2002.
+" Last Change: 03-Sep-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -51,7 +51,7 @@ function! s:GetMx_bbsmodoki()
 endfunction
 
 function! s:FormatArticle(linestr, ...)
-  let flags = a:0 > 0 ? a:0 : ''
+  let flags = a:0 > 0 ? a:1 : ''
   if a:linestr =~ s:mx_article
     let retval = substitute(a:linestr, s:mx_article, '\r--------\r\1  From:\2  Date:\4  Mail:\3\r  \5', '')
   else
@@ -86,13 +86,19 @@ function! DatLine2Text(artnum, datline, ...)
   return AL_decode_entityreference(retval)
 endfunction
 
+function! DatGetTitle()
+  let firstline = '0<>' . getline(1)
+  let b:datutil_format = s:GetMx(firstline)
+  let b:datutil_title = AL_decode_entityreference(substitute(firstline, s:mx_article, '\6', ''))
+  return b:datutil_title
+endfunction
+
 function! Dat2Text(...)
   let flags = a:0 > 0 ? a:1 : ''
   let s:dat2text_count = 1
   let s:dat2text_verbose = AL_hasflag(flags, 'verbose') ? 1 : 0
   " スレッドフォーマットパターンを決定
-  let firstline = '0<>' . getline(1)
-  let b:datutil_format = s:GetMx(firstline)
+  call DatGetTitle()
 
   " 後で表示位置を調整するため
   let curline = line('.')
@@ -104,7 +110,6 @@ function! Dat2Text(...)
   endif
   " これらはdatutil側で常に設定する
   let b:datutil_last_article_num = line('$')
-  let b:datutil_title = AL_decode_entityreference(substitute(firstline, s:mx_article, '\6', ''))
 
   " 整形と実体参照の解決
   %s/^.*$/\=s:Dat2Text_loop(s:dat2text_count."<>".submatch(0))/
@@ -119,10 +124,6 @@ function! Dat2Text(...)
   let line = 1
   call append(line, 'Size: ' . size_kb . (not_filesize ? ' (NOT FILESIZE)' : ''))
   let line = line + 1
-  if exists('b:host') && exists('b:board')
-    call append(line, 'Board: http://' .b:host.b:board)
-    let line = line + 1
-  endif
   call append(line, '') " HTMLやMAILヘッダー風にしておく
   let line = line + 1
 
@@ -178,9 +179,7 @@ function! Dat2HTML(dat, startnum, endnum, url_base, url_board)
 
   call AL_execute('vertical 1sview '.a:dat)
   " タイトルの取得
-  let firstline = '0<>'.getline(1)
-  let format = s:GetMx(firstline)
-  let title = AL_decode_entityreference(substitute(firstline, s:mx_article, '\6', ''))
+  let title = DatGetTitle()
   " 表示範囲指定の検証
   let artnum = line('$')
   if startnum < 1
@@ -230,7 +229,7 @@ function! Dat2HTML(dat, startnum, endnum, url_base, url_board)
   let retval = retval.'<p><font size="+1" color="red">'.title.'</font></p>'."\n"
   " スレ内容
   let retval = retval.'<dl>'."\n"
-  let contents = substitute(contents, '<a[^>]\{-\}>\(&gt;&gt;\(\d\+\)\)</a>', '<a href="\2" target="_blank">\1</a>', 'g')
+  let contents = substitute(contents, '<a[^>]\{-\}>\(&gt;&gt;\(\d\+\%(-\d\+\)\?\)\)</a>', '<a href="\2n" target="_blank">\1</a>', 'g')
   let retval = retval.contents
   let retval = retval.'</dl>'."\n"
   " dat情報表示

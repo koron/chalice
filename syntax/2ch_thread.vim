@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 07-Jul-2002.
+" Last Change: 31-Aug-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -13,6 +13,7 @@ syntax match 2chThreadInfoLabel display "^Info:.*$"
 syntax match 2chThreadErrorLabel display "^Error:.*$"
 syntax match 2chThreadTitleLabel display "^Title:.*$"
 syntax match 2chThreadBoardLabel display "^Board:"
+syntax match 2chThreadUrlLabel display "^URL:"
 syntax match 2chThreadHeaderSize transparent "^Size:.*$" contains=2chThreadSizeLabel,2chThreadSizeNumber,2chThreadSizeWarnNotfile
 syntax match 2chThreadSizeLabel display "Size:" contained containedin=2chThreadHeaderSize
 syntax match 2chThreadSizeNumber display "\d\+KB" contained containedin=2chThreadHeaderSize
@@ -36,6 +37,7 @@ hi def link 2chThreadInfoLabel		Comment
 hi def link 2chThreadErrorLabel		Error
 hi def link 2chThreadTitleLabel		Title
 hi def link 2chThreadBoardLabel		Type
+hi def link 2chThreadUrlLabel		Type
 hi def link 2chThreadSizeLabel		Type
 hi def link 2chThreadSizeNumber		Constant
 hi def link 2chThreadSizeWarnNotfile	Comment

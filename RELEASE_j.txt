@@ -1,22 +1,29 @@
-2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.6を公開します。Vimさ
-え動くのであればどのOSでも同じように操作することができます。なんか2ちゃんね
-る以外の掲示板が読めることもあるようです。
+2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.7を公開します。Vimさえ
+動くのであればどのOSでも同じように操作することができます。なんか2ちゃんねる以外
+の掲示板が読めることもあるようです。
 
 - Chalice for Vim
-  http://www.kaoriya.net/dist/chalice-1.6.tar.bz2
+  http://www.kaoriya.net/dist/chalice-1.7.tar.bz2
   http://www.kaoriya.net/#CHALICE
 
-利用するのに必要なChalice以外のソフトウェア、各プラットホームに固有の情報、
-及びアップデート内容、その他詳しいことは総てアーカイブに同梱のREADME_j.txtを
-参照してください。同梱のTODO.txtは次期メジャーアップデートになる予定の2.0向
-けのTODOですので気にしないで下さい。以下は関連URLです。
+CVSによる配布も行なっております。CVSを利用することでパッチリリースへの追従が手
+軽になります。CVSサーバへのログインパスワードは不要です。パスワードを聞かれます
+が何も入力せずにEnterをタイプしてください。入手の際のコマンド例:
+
+  cvs -d :pserver:anonymous@cvs.kaoriya.net:/anonycvs login
+  cvs -d :pserver:anonymous@cvs.kaoriya.net:/anonycvs checkout chalice
+
+利用するのに必要なChalice以外のソフトウェア、各プラットホームに固有の情報、及び
+アップデート内容、その他詳しいことは総てアーカイブに同梱のREADME_j.txtを参照し
+てください。同梱のTODO.txtは次期メジャーアップデートになる予定の2.0向けのTODOで
+すので気にしないで下さい。以下は関連URLです。
 
 - 香り屋 (Win:vim,cURL,iconv OSX:vim)
   http://www.kaoriya.net/
 - vim.org (ソースコード他)
   http://www.vim.org/
 - Windows用 cURL (香り屋配布版)
-  http://www.kaoriya.net/dist/curl-7.9.8-win32-ssl.tar.bz2
+  http://www.kaoriya.net/dist/curl-7.10-win32-ssl.tar.bz2
   http://www.kaoriya.net/#ARCHIVE_CURL
 - MacOS X用 cURL情報
   http://www.cosmos.ne.jp/~kaz6120/mclb/osx/curl_wget01.html

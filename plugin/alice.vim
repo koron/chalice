@@ -2,10 +2,10 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 27-Jul-2002.
+" Last Change: 16-Nov-2002.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
-let s:version_serial = 111
+let s:version_serial = 116
 if exists('g:plugin_alice_disable') || (exists('g:version_alice') && g:version_alice > s:version_serial)
   finish
 endif
@@ -13,6 +13,21 @@ let g:version_alice = s:version_serial
 
 "------------------------------------------------------------------------------
 " ALICE
+
+function! AL_string_formatnum(value, ncolumns, ...)
+  let flags = a:0 > 0 ? a:1 : ''
+  let len = strlen(a:value)
+  if len < a:ncolumns
+    if AL_hasflag(flags, '0')
+      let padding = AL_string_multiplication('0', a:ncolumns - len)
+    else
+      let padding = AL_string_multiplication(' ', a:ncolumns - len)
+    endif
+    return padding.a:value
+  else
+    return a:value
+  endif
+endfunction
 
 function! AL_string_multiplication(base, scalar)
   " Like perl's 'x' operator
@@ -152,7 +167,7 @@ function! AL_mkdir(dirpath)
   endif
 endfunction
 
-let g:AL_pattern_class_url = '[-!#$%&+,./0-9:;=?@A-Za-z_~]'
+let g:AL_pattern_class_url = '[-!#$%&*+,./0-9:;=?@A-Za-z_~]'
 
 function! AL_open_url(url, cmd)
   " Open given URL by external browser
@@ -178,11 +193,12 @@ function! AL_open_url(url, cmd)
     if excmd !~ '^!'
       call AL_system(excmd)
     else
-      let url = escape(url, '%#')
+      let excmd = escape(excmd, '%#')
       call AL_execute(excmd)
     endif
     let retval = 1
   elseif has('win32')
+    let url = AL_urldecode(url)
     " If 'url' has % or #, all of those characters are expanded to buffer
     " name by execute().  Below escape() suppress this.  system() does not
     " expand those characters.
@@ -191,7 +207,14 @@ function! AL_open_url(url, cmd)
     if !has('win95') && url !~ '[&!]'
       " for Win NT/2K/XP
       call AL_execute('!start /min cmd /c start ' . url)
+      " MEMO: "cmd" causes some side effects.
+      " Some strings like "%CD%" is expanded (may be environment variable?)
+      " by cmd.
     else
+      " It is known this rundll32 method has a problem when opening URL that
+      " matches http://*.html.  It is better to use ShellExecute() API for
+      " this purpose, open some URL.  Command "cmd" and "start" on NT/2K?XP
+      " does this.
       call AL_execute("!start rundll32 url.dll,FileProtocolHandler " . url)
     endif
     let retval = 1
