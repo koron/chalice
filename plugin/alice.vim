@@ -1,51 +1,22 @@
-" vim:set ts=8 sts=2 sw=2 tw=0 nowrap:
+" vim:set ts=8 sts=2 sw=2 tw=0 nowrap fdm=marker:
 "
 " alice.vim - A vim script library
 "
-" Last Change: 16-Nov-2002.
+" Last Change: 05-Apr-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
-let s:version_serial = 116
-if exists('g:plugin_alice_disable') || (exists('g:version_alice') && g:version_alice > s:version_serial)
+let s:version_serial = 122
+let s:name = 'alice'
+if exists('g:plugin_'.s:name.'_disable') || (exists('g:version_'.s:name) && g:version_{s:name} > s:version_serial)
   finish
 endif
-let g:version_alice = s:version_serial
+let g:version_{s:name} = s:version_serial
 
 "------------------------------------------------------------------------------
 " ALICE
 
-function! AL_string_formatnum(value, ncolumns, ...)
-  let flags = a:0 > 0 ? a:1 : ''
-  let len = strlen(a:value)
-  if len < a:ncolumns
-    if AL_hasflag(flags, '0')
-      let padding = AL_string_multiplication('0', a:ncolumns - len)
-    else
-      let padding = AL_string_multiplication(' ', a:ncolumns - len)
-    endif
-    return padding.a:value
-  else
-    return a:value
-  endif
-endfunction
-
-function! AL_string_multiplication(base, scalar)
-  " Like perl's 'x' operator
-  let retval = ''
-  let base = a:base
-  let scalar = a:scalar
-  while scalar
-    if scalar % 2
-      let retval = retval . base
-    endif
-    let scalar = scalar / 2
-    let base = base . base
-  endwhile
-  return retval
-endfunction
-
-function! AL_sscan(string, pattern, select)
-  return substitute(matchstr(a:string, a:pattern), a:pattern, a:select, '')
+function! AL_version()
+  return s:version_serial
 endfunction
 
 function! AL_compareversion(ver1, ver2)
@@ -57,7 +28,6 @@ function! AL_compareversion(ver1, ver2)
   let v2 = matchstr(a:ver2, mx_ver)
   let mx_num = '^0*\(\d\+\)\%(\.\(.*\)\)\?'
   while v1 != '' && v2 != ''
-    "echo "v1=".v1." v2=".v2
     let n1 = substitute(v1, mx_num, '\1', '') + 0
     let n2 = substitute(v2, mx_num, '\1', '') + 0
     let v1 = substitute(v1, mx_num, '\2', '')
@@ -116,6 +86,7 @@ function! AL_hascmd(cmd)
   set wildignore=
   " Search a command from path
   let cmdpath = globpath(path, cmd)
+  let retval = ''
   if has('win32') && cmdpath == ''
     let retval = globpath($VIM, cmd)
   elseif cmdpath != ''
@@ -143,28 +114,16 @@ function! AL_fileread(filename)
   return AL_system(cmd . ' ' . AL_quote(a:filename))
 endfunction
 
-function! AL_chompex(str)
-  " Remove leading and trailing white-spaces.
-  return substitute(a:str, '^\s\+\|\s\+$', '', 'g')
-endfunction
-
-function! AL_chomp(str)
-  " Like perl chomp() function.  (But did't change argument)
-  return substitute(a:str, '\s\+$', '', '')
-endfunction
-
 function! AL_buffer_clear()
   call AL_execute('%delete _')
 endfunction
 
-function! AL_mkdir(dirpath)
-  " Make directory and its parents if needed.
-  let dirpath = AL_quote(substitute(a:dirpath, '[/\\]$', '', ''))
-  if has('win32') && &shell !~ 'sh'
-    call AL_system('mkdir ' . substitute(dirpath, '/', '\\', 'g'))
-  else
-    call AL_system('mkdir -p ' . dirpath)
-  endif
+function! AL_filename(path)
+  return matchstr(a:path, '\m[^/\\]*$')
+endfunction
+
+function! AL_basepath(dirpath)
+  return substitute(matchstr(a:dirpath, '\m^.*[/\\]'), '\m[/\\]$', '', '')
 endfunction
 
 let g:AL_pattern_class_url = '[-!#$%&*+,./0-9:;=?@A-Za-z_~]'
@@ -178,7 +137,7 @@ function! AL_open_url(url, cmd)
   if a:url == ''
     return retval
   endif
-  let url = AL_verifyurl(a:url)
+  let url = s:AL_verifyurl(a:url)
 
   if a:cmd != ''
     let url = AL_quote(url)
@@ -199,23 +158,34 @@ function! AL_open_url(url, cmd)
     let retval = 1
   elseif has('win32')
     let url = AL_urldecode(url)
-    " If 'url' has % or #, all of those characters are expanded to buffer
-    " name by execute().  Below escape() suppress this.  system() does not
-    " expand those characters.
-    let url = escape(url, '%#')
-    " Start system related URL browser
-    if !has('win95') && url !~ '[&!]'
-      " for Win NT/2K/XP
-      call AL_execute('!start /min cmd /c start ' . url)
-      " MEMO: "cmd" causes some side effects.
-      " Some strings like "%CD%" is expanded (may be environment variable?)
-      " by cmd.
+    " You can get minshell.exe at http://www.kaoriya.net/testdir/
+    let minshell = AL_hascmd('minshell')
+    if minshell.'X' !=# 'X'
+      call AL_system(minshell.' '.url)
     else
-      " It is known this rundll32 method has a problem when opening URL that
-      " matches http://*.html.  It is better to use ShellExecute() API for
-      " this purpose, open some URL.  Command "cmd" and "start" on NT/2K?XP
-      " does this.
-      call AL_execute("!start rundll32 url.dll,FileProtocolHandler " . url)
+      let url = substitute(url, '%', '%25', 'g')
+      if url =~# ' '
+	let url = substitute(url, ' ', '%20', 'g')
+	let url = substitute(url, '^file://', 'file:/', '')
+      endif
+      " If 'url' has % or #, all of those characters are expanded to buffer
+      " name by execute().  Below escape() suppress this.  system() does not
+      " expand those characters.
+      let url = escape(url, '%#')
+      " Start system related URL browser
+      if !has('win95') && url !~ '[&!]'
+	" for Win NT/2K/XP
+	call AL_execute('!start /min cmd /c start ' . url)
+	" MEMO: "cmd" causes some side effects.
+	" Some strings like "%CD%" is expanded (may be environment variable?)
+	" by cmd.
+      else
+	" It is known this rundll32 method has a problem when opening URL that
+	" matches http://*.html.  It is better to use ShellExecute() API for
+	" this purpose, open some URL.  Command "cmd" and "start" on NT/2K?XP
+	" does this.
+	call AL_execute("!start rundll32 url.dll,FileProtocolHandler " . url)
+      endif
     endif
     let retval = 1
   elseif has('mac')
@@ -226,17 +196,6 @@ function! AL_open_url(url, cmd)
   return retval
 endfunction
 
-function! AL_nr2hex(nr)
-  " see :help eval-examples
-  let n = a:nr
-  let r = ""
-  while n
-    let r = '0123456789ABCDEF'[n % 16] . r
-    let n = n / 16
-  endwhile
-  return r
-endfunction
-
 function! AL_urlencoder_ch2hex(ch)
   let hex = AL_nr2hex(char2nr(a:ch))
   if strlen(hex) % 2 == 1
@@ -245,10 +204,10 @@ function! AL_urlencoder_ch2hex(ch)
   return substitute(hex, '\(..\)', '%\1', 'g')
 endfunction
 
-function! AL_verifyurl(str)
+function! s:AL_verifyurl(str)
   let retval = a:str
-  let retval = substitute(retval, '[$~]', '\=AL_urlencoder_ch2hex(submatch(0))', 'g')
-  let retval = substitute(retval, ' ', '+', 'g')
+  let retval = substitute(retval, '[ $~]', '\=AL_urlencoder_ch2hex(submatch(0))', 'g')
+  "let retval = substitute(retval, ' ', '+', 'g')
   return retval
 endfunction
 
@@ -318,10 +277,14 @@ function! AL_quote(str)
 endfunction
 
 "------------------------------------------------------------------------------
-" FLAG OPRATION
+" FLAG FUNCTIONS {{{
+
+function! s:AL_getflagmx(flag)
+  return '\%(^\|,\)'.a:flag.'\%(=\([^,]*\)\)\?\%(,\|$\)'
+endfunction
 
 function! AL_delflag(flags, flag)
-  let newflags = substitute(a:flags, '\(^\|,\)' .a:flag. '\(,\|$\)', ',', 'g')
+  let newflags = substitute(a:flags, s:AL_getflagmx(a:flag) , ',', 'g')
   let newflags = substitute(newflags, ',,\+', ',', 'g')
   let newflags = substitute(newflags, '^,', '', 'g')
   let newflags = substitute(newflags, ',$', '', 'g')
@@ -335,11 +298,224 @@ endfunction
 function! AL_hasflag(flags, flag)
   " Return 1 (not 0) if a:flags has word a:flag.  a:flags is supposed a list
   " of words separated by camma as CSV.
-  return a:flags =~ '\(^\|,\)' . a:flag .'\(,\|$\)'
+  return a:flags =~ s:AL_getflagmx(a:flag)
 endfunction
 
+function! AL_getflagparam(flags, flag)
+  let mx = s:AL_getflagmx(a:flag)
+  let retval = AL_sscan(a:flags, mx, '\1')
+  return retval
+endfunction
+
+"}}}
+
 "------------------------------------------------------------------------------
-" MULTILINE STRING
+" STRING FUNCTIONS {{{
+
+function! AL_chomp(str)
+  " Like perl chomp() function.  (But did't change argument)
+  return substitute(a:str, '\s\+$', '', '')
+endfunction
+
+function! AL_chompex(str)
+  " Remove leading and trailing white-spaces.
+  return substitute(a:str, '^\s\+\|\s\+$', '', 'g')
+endfunction
+
+function! AL_nr2hex(nr)
+  " see :help eval-examples
+  let n = a:nr
+  let r = ""
+  while 1
+    let r = '0123456789ABCDEF'[n % 16] . r
+    let n = n / 16
+    if n == 0
+      break
+    endif
+  endwhile
+  return r
+endfunction
+
+function! AL_sscan(string, pattern, select)
+  return substitute(matchstr(a:string, a:pattern), a:pattern, a:select, '')
+endfunction
+
+function! AL_sscan_decimal(string)
+  return AL_sscan(a:string, '\m[1-9]\d*', '&') + 0
+endfunction
+
+function! AL_string_formatnum(value, ncolumns, ...)
+  let flags = a:0 > 0 ? a:1 : ''
+  let len = strlen(a:value)
+  if len < a:ncolumns
+    if AL_hasflag(flags, '0')
+      let padding = AL_string_multiplication('0', a:ncolumns - len)
+    else
+      let padding = AL_string_multiplication(' ', a:ncolumns - len)
+    endif
+    return padding.a:value
+  else
+    return a:value
+  endif
+endfunction
+
+function! AL_string_multiplication(base, scalar)
+  " Like perl's 'x' operator
+  let retval = ''
+  let base = a:base
+  let scalar = a:scalar
+  while scalar
+    if scalar % 2
+      let retval = retval . base
+    endif
+    let scalar = scalar / 2
+    let base = base . base
+  endwhile
+  return retval
+endfunction
+
+"}}}
+
+"------------------------------------------------------------------------------
+" TIME FUNCTIONS {{{
+
+if exists('s:tz_offset')
+  " Time zone offset
+  unlet s:tz_offset
+endif
+
+function! s:GetEpochtime(year, month, day, hour, minute, second)
+  return AL_epochday(a:year, a:month, a:day) * 86400 + a:hour * 3600 + a:minute * 60 + a:second
+endfunction
+
+function! s:EnsureTimezoneOffset()
+  if !exists('s:tz_offset')
+    let curtime = localtime()
+    let calctime = s:GetEpochtime(AL_sscan_decimal(strftime('%Y', curtime)), AL_sscan_decimal(strftime('%m', curtime)), AL_sscan_decimal(strftime('%d', curtime)), AL_sscan_decimal(strftime('%H', curtime)), AL_sscan_decimal(strftime('%M', curtime)), AL_sscan_decimal(strftime('%S', curtime)))
+    let s:tz_offset = curtime - calctime
+  endif
+endfunction
+
+function! AL_epochday(year, month, day)
+  " Return elapsed days from 01-Jan-1970.
+  if a:month < 3
+    let year  = a:year - 1
+    let month = a:month + 9
+  else
+    let year  = a:year
+    let month = a:month - 3
+  endif
+  return year * 1461 / 4 - year / 100 + year / 400 + (month * 153 + 2) / 5 + a:day - 719469
+endfunction
+
+function! AL_epochtime(year, month, day, ...)
+  " Inverse function of strftime('%Y %m %d %H %M %S', time)
+  call s:EnsureTimezoneOffset()
+  let hour = 0
+  let minute = 0
+  let second = 0
+  if a:0 > 0
+    let hour = a:1
+  endif
+  if a:0 > 1
+    let minute = a:2
+  endif
+  if a:0 > 2
+    let second = a:3
+  endif
+  "call AL_echokv('s:tz_offset', s:tz_offset)
+  return s:GetEpochtime(a:year, a:month, a:day, hour, minute, second) + s:tz_offset
+endfunction
+
+function! AL_todayepoch()
+  let curtime = localtime()
+  return AL_epochtime(AL_sscan_decimal(strftime('%Y', curtime)), AL_sscan_decimal(strftime('%m', curtime)), AL_sscan_decimal(strftime('%d', curtime)))
+endfunction
+
+"}}}
+
+"------------------------------------------------------------------------------
+" DIRECTORY FUNCTIONS {{{
+
+function! s:MakeDirectory(dirpath)
+  " Make directory and its parents if needed.
+  let dirpath = AL_quote(substitute(a:dirpath, '\m[/\\]$', '', ''))
+  if has('win32') && &shell !~ '\m\csh'
+    call AL_system('mkdir ' . substitute(dirpath, '\m/', '\\', 'g'))
+  else
+    call AL_system('mkdir ' . dirpath)
+  endif
+endfunction
+
+function! s:EnsureDirectory(dirpath)
+  if !isdirectory(a:dirpath)
+    call s:MakeDirectory(a:dirpath)
+    if !isdirectory(a:dirpath)
+      return 0
+    endif
+  endif
+  return 1
+endfunction
+
+function! AL_mkdir(dirpath)
+  if isdirectory(a:dirpath)
+    return 1
+  endif
+  let basepath = AL_basepath(a:dirpath)
+  "call AL_echokv('basepath', basepath)
+  if basepath.'X' !=# 'X' && !(has('win32') && basepath =~# '\m^\a:$')
+    if !AL_mkdir(basepath)
+      return 0
+    endif
+  endif
+  return s:EnsureDirectory(a:dirpath)
+endfunction
+
+function! AL_delete(path)
+  let path = AL_quote(substitute(a:path, '\m[/\\]$', '', ''))
+  if has('win95') && &shell =~# '\m\ccommand\.com'
+    call AL_system('deltree /Y '.path)
+  elseif has('win32') && &shell =~# '\m\ccmd\.exe'
+    let path = substitute(path, '\m/', '\\', 'g')
+    if isdirectory(a:path)
+      call AL_system('rmdir /S /Q '.path)
+    else
+      call AL_system('del /F '.path)
+    endif
+  else
+    call AL_system('rm -fr '.path)
+  endif
+  return glob(a:path).'X' ==# 'X' ? 1 : 0
+endfunction
+
+"}}}
+
+"------------------------------------------------------------------------------
+" ECHO FUNCTIONS {{{
+
+function! AL_echokv(key, value)
+  call AL_echo(a:key.'=', 'PreProc')
+  call AL_echon(a:value)
+endfunction
+
+function! AL_echon(msgstr, ...)
+  let hlname = a:0 > 0 ? a:1 : 'None'
+  execute "echohl " . (hlname != '' ? hlname : 'None')
+  echon a:msgstr
+  echohl None
+endfunction
+
+function! AL_echo(msgstr, ...)
+  let hlname = a:0 > 0 ? a:1 : 'None'
+  execute "echohl " . (hlname != '' ? hlname : 'None')
+  echo a:msgstr
+  echohl None
+endfunction
+
+"}}}
+
+"------------------------------------------------------------------------------
+" MULTILINE STRING FUNCTIONS {{{
 
 function! AL_getline(multistr, linenum)
   if a:linenum == 0
@@ -366,8 +542,28 @@ function! AL_firstline(multistr)
   return matchstr(a:multistr, "^[^\<NL>]*")
 endfunction
 
+function! AL_lastline(multistr)
+  return substitute(matchstr(a:multistr, "\\m[^\<NL>]*\<NL>\\?$"), "\<NL>$", '', '')
+endfunction
+
+"}}}
+
 "------------------------------------------------------------------------------
-" WRAPPER
+" WRAPPER FUNCTIONS {{{
+
+function! AL_write(...)
+  " Write current buffer to a file without backup.
+  let filename = a:0 > 0 ? a:1 : ''
+  let save_backup = &backup
+  set nobackup
+  if filename.'X' == 'X'
+    call AL_execute('write!')
+  else
+    call AL_execute('write! '.escape(filename, ' '))
+  endif
+  let &backup = save_backup
+  return 1
+endfunction
 
 function! AL_execute(cmd)
   if 0 && exists('g:AL_option_nosilent') && g:AL_option_nosilent != 0
@@ -387,3 +583,5 @@ function! AL_system(cmd)
   return system(cmdstr)
 endfunction
 command! -nargs=1 ALsystem		call AL_system(<args>)
+
+"}}}

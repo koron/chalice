@@ -1,29 +1,47 @@
-" vim:set ts=8 sts=2 sw=2 tw=0:
+" vim:set ts=8 sts=2 sw=2 tw=0 fdm=marker:
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 28-Dec-2002.
+" Last Change: 17-Apr-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
-let s:version = '1.6'
+let s:version = '1.8'
 
 " 使い方
 "   chaliceディレクトリを'runtimepath'に通してからVimを起動して:Chaliceを実行
 "     :set runtimepath+=$HOME/chalice
 "     :Chalice
 
+
+"------------------------------------------------------------------------------
+" RESOLVE DEPENDENCE {{{
+
 " プラグインの無効化フラグ
 if exists('plugin_chalice_disable')
   finish
 endif
+" alice.vimのロードを確実にする
+if !exists('*AL_version')
+  runtime! plugin/alice.vim
+endif
+" cacheman.vimのロードを確実なものにする
+if !exists('g:versoin_cacheman')
+  runtime! plugin/cacheman.vim
+endif
+" datutil.vimのロードを確実なものにする
+if !exists('*Dat2Text')
+  runtime! plugin/datutil.vim
+endif
+" dolib.vimのロードを確実なものにする
+if !exists('g:versoin_dolib')
+  runtime! plugin/dolib.vim
+endif
 
-" グローバル関数
-"   ChaliceIsRunning()
-"   ChaliceDebug()
+"}}}
 
 "------------------------------------------------------------------------------
-" ユーザが設定可能なグローバル変数
+" ユーザが設定可能なグローバル変数 {{{
 
 " ユーザ名/匿名書き時の名前設定
 if !exists('g:chalice_username')
@@ -131,6 +149,17 @@ if !exists('g:chalice_columns')
   let g:chalice_columns = -1
 endif
 
+" 板一覧のデフォルト幅を設定する
+if !exists('g:chalice_boardlist_columns')
+  let g:chalice_boardlist_columns = 15
+endif
+
+" スレ一覧のデフォルト高を設定する
+if !exists('g:chalice_threadlist_lines')
+  let g:chalice_threadlist_lines = 10
+endif
+
+" 板一覧と栞でfoldに使用する記号を指定する
 if !exists('g:chalice_foldmarks')
   let g:chalice_foldmarks = ''
 endif
@@ -150,7 +179,7 @@ if !exists('g:chalice_noquery_write')
   let g:chalice_noquery_write = 0
 endif
 
-" 起動時の状態を設定する(bookmark,offline,nohelp,noanime)
+" 起動時の状態を設定する(bookmark,offline,nohelp,aa=[no|noanime],novercheck)
 if !exists('g:chalice_startupflags')
   let g:chalice_startupflags = ''
 endif
@@ -160,7 +189,7 @@ if !exists('g:chalice_preview')
   let g:chalice_preview = 1
 endif
 
-" 動作時の各種設定(1,above, autoclose)
+" 動作時の各種設定(1, above, autoclose)
 if !exists('g:chalice_previewflags')
   let g:chalice_previewflags = ''
 endif
@@ -170,9 +199,14 @@ if !exists('g:chalice_noredraw')
   let g:chalice_noredraw = 0
 endif
 
-" 書込み時に実体参照へ変更する文字を指定(amp,nbsp)
+" 書込み時に実体参照へ変更する文字を指定(amp,nbsp2)
 if !exists('g:chalice_writeoptions')
-  let g:chalice_writeoptions = 'amp,nbsp'
+  let g:chalice_writeoptions = 'amp,nbsp2'
+endif
+
+" 読み込み時の動作に関するオプション(noenc)
+if !exists('g:chalice_readoptions')
+  let g:chalice_readoptions = ''
 endif
 
 " スレ一覧表示時に更新チェックをするかどうかを指定(0: チェックしない)
@@ -190,8 +224,40 @@ if !exists('g:chalice_titlestring')
   let g:chalice_titlestring = ''
 endif
 
+" NGワードの指定パターン("\<NL>"区切りで複数のパターンを指定可能)
+if !exists('g:chalice_ngwords')
+  let g:chalice_ngwords = ''
+endif
+
+" NGワード適用時の表示ラベル
+if !exists('g:chalice_localabone')
+  let g:chalice_localabone = 'ローカルあぼーん'
+endif
+
+" 2ch認証用ID
+if !exists('g:chalice_loginid')
+  let g:chalice_loginid = ''
+endif
+
+" 2ch認証用ID
+if !exists('g:chalice_password')
+  let g:chalice_password = ''
+endif
+
+" フォーマットキャッシュの有効日数
+if !exists('g:chalice_formatedcache_expire') || g:chalice_formatedcache_expire + 0 < 1
+  let g:chalice_formatedcache_expire = 14
+endif
+
+" 巡回の停止カテゴリ名
+if !exists('g:chalice_cruise_endmark')
+  let g:chalice_cruise_endmark = '終了'
+endif
+
+"}}}
+
 "------------------------------------------------------------------------------
-" 定数値
+" 仮定数値 {{{
 "   将来はグローバルオプション化できそうなの。もしくはユーザが書き換えても良
 "   さそうなの。
 
@@ -208,6 +274,7 @@ let s:label_wastetime = '利用時間'
 let s:label_wastetime_sum = '無駄時間合計'
 let s:label_board = '[板]'
 let s:label_board_escaped = escape(s:label_board, '[]')
+let s:label_localabone = 'Chalice,aboned,ローカルあぼーん'
 " メッセージ
 let s:msg_confirm_appendwrite_yn = 'バッファの内容が書き込み可能です. 書き込みますか?(yes/no): '
 let s:msg_confirm_appendwrite_ync = '本当に書き込みますか?(yes/no/cancel): '
@@ -223,8 +290,10 @@ let s:msg_warn_oldthreadlist = 'スレ一覧が古い可能性があります. R で更新します.'
 let s:msg_warn_bookmark = '栞は閉じる時に自動的に保存されます.'
 let s:msg_warn_bmkcancel = '栞への登録はキャンセルされました.'
 let s:msg_warn_dontusetoomuch = '利用し過ぎに注意シル!!'
+let s:msg_warn_datdirtoolsuccess = 'DATDIR形式への移行が完了しました.'
 let s:msg_wait_threadformat = '貴様ら!! スレッド整形中のため、しばらくお待ちください...'
 let s:msg_wait_download = 'ダウンロード中...'
+let s:msg_wait_login = 'ログイン中...'
 let s:msg_error_nocurl = 'Chaliceには正しくインストールされたcURLが必要です.'
 let s:msg_error_nogzip = 'Chaliceには正しくインストールされたgzipが必要です.'
 let s:msg_error_noconv = 'Chaliceを非CP932環境で利用するには qkc もしくは nkf が必要です.'
@@ -250,11 +319,14 @@ let s:msg_error_nocachedir = 'キャッシュディレクトリを作成出来ません.'
 let s:msg_error_nothread = 'スレッドが存在しないか, 倉庫入り(HTML化)待ちです.'
 let s:msg_error_accesshere = '詳細は下記URLに外部ブラウザでアクセスしてみてください.'
 let s:msg_error_newversion = 'Chaliceの新しいバージョン・パッチがリリースされています.'
-let s:msg_error_docvsupdate = 'CVS版を利用している場合はcvs updateで最新版を入手できます.'
+let s:msg_error_docvsupdate = 'CVS版を利用している場合はcvs update -dPで最新版を入手できます.'
 let s:msg_error_htmlnotopen = 'スレッドが開かれていません.'
 let s:msg_error_htmlnodat = 'スレッドのdatがありません.'
+let s:msg_error_nodatdirtool = 'DATDIRへの移行ツールが見つかりません. 確認してください.'
+let s:msg_error_datdirtoolfailed = 'DATDIR移行ツールが失敗しました. なんでだろ?'
 let s:msg_thread_hasnewarticles = '新しい書き込みがあります.'
 let s:msg_thread_nonewarticle = '新たな書き込みはありません'
+let s:msg_thread_nonewwait = '数秒後に巡回を続行します. (CTRL-Cで割込終了)'
 let s:msg_thread_dead = '倉庫に落ちたかHTML化待ちとオモワレ.'
 let s:msg_thread_lost = '倉庫に落ちました.'
 let s:msg_thread_unknown = '初めて見るスレです. 更新チェックはできません.'
@@ -266,16 +338,17 @@ let s:msg_help_threadlist = '(スレ一覧)  <CR>:スレ決定 j/k:スレ選択  d:dat削除  
 let s:msg_help_thread = '(スレッド)  i:書込  I:sage書込  a:匿名書込  A:匿名sage  r:更新'
 let s:msg_help_bookmark = '(スレの栞)  <CR>:URL決定  h/l:閉/開 <C-A>:閉じる  [編集可能]'
 let s:msg_help_write = '(書き込み)  <C-CR>:書き込み実行  <C-W>c:閉じる  [編集可能]'
+let s:msg_help_rewrite = '書き込みに失敗したと思われる文章を復帰しました.'
+"}}}
 
 "------------------------------------------------------------------------------
-" 定数値 CONSTANT
+" 定数値 CONSTANT {{{
 "   内部でのみ使用するもの
 
 " デバッグフラグ (DEBUG FLAG)
-let s:debug = 1
+let s:debug = 0
 
 " 2ch認証のための布石
-let s:user_agent = 'Monazilla/1.00 Chalice/' . s:version
 let s:user_agent_enable = 1
 " 2ch依存データ
 let s:encoding = 'cp932'
@@ -300,6 +373,7 @@ let s:bookmark_backupsuffix = '.chalice_backup'
 " スクリプトIDを取得
 map <SID>xx <SID>xx
 let s:sid = substitute(maparg('<SID>xx'), 'xx$', '', '')
+let g:chalice_sid = s:sid
 unmap <SID>xx
 " スクリプトのディレクトリを取得
 let s:scriptdir = expand('<sfile>:p:h')
@@ -322,7 +396,7 @@ let s:cmd_conv = ''
 let s:cmd_gzip = ''
 
 " MATCH PATTERNS
-let s:mx_thread_dat = '^[ !\*+x] \(.\+\) (\(\%(\%(\d\+\|???\)/\)\?\d\+\)).*\t\+\(\d\+\%(_\d\+\)\?\.\%(dat\|cgi\)\)'
+let s:mx_thread_dat = '^[ !\*+x] \(.\+\) (\%(\%(\d\+\|???\)/\)\?\(\d\+\)).*\t\+\(\d\+\%(_\d\+\)\?\.\%(dat\|cgi\)\)'
 let s:mx_anchor_num = '>>\(\(\d\+\)\%(-\(\d\+\)\)\?\)'
 let s:mx_anchor_url = '\(\(h\?ttps\?\|ftp\)://'.g:AL_pattern_class_url.'\+\)'
 let s:mx_anchor_www = 'www'.g:AL_pattern_class_url.'\+'
@@ -334,9 +408,10 @@ let s:mx_servers_shitaraba = '^www\.shitaraba\.com$'
 let s:mx_servers_machibbs = 'machibbs\.com$'
 let s:mx_servers_euc = '\%(jbbs\.net\|shitaraba\.com\)'
 
-" コマンドの設定
-command! Chalice			call <SID>ChaliceOpen()
+"}}}
 
+"------------------------------------------------------------------------------
+" AUTO COMMANDS {{{
 " オートコマンドの設定
 augroup Chalice
 autocmd!
@@ -344,16 +419,23 @@ execute "autocmd BufDelete " . s:buftitle_write . " call <SID>DoWriteBuffer('clo
 execute "autocmd BufEnter " . s:buftitle_boardlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_boardlist)|normal! 0"
 execute "autocmd BufEnter " . s:buftitle_threadlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:opened_bookmark?s:msg_help_bookmark : s:msg_help_threadlist)"
 execute "autocmd BufEnter " . s:buftitle_thread . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_thread)"
-execute "autocmd BufEnter " . s:buftitle_write . " let &undolevels=s:undolevels|call s:EchoH('WarningMsg', s:msg_help_write)"
-execute "autocmd BufLeave " . s:buftitle_write . " set undolevels=0"
 execute "autocmd BufDelete " . s:buftitle_threadlist . " if s:opened_bookmark|call s:CloseBookmark()|endif"
 execute "autocmd CursorHold " . s:buftitle_thread . " call s:OpenPreview_autocmd()"
 execute "autocmd CursorHold " . s:buftitle_preview . " call s:OpenPreview_autocmd()"
 augroup END
 
+"}}}
+
 "------------------------------------------------------------------------------
-" GLOBAL FUNCTIONS
+" GLOBAL FUNCTIONS {{{
 " グローバル関数
+
+function! Chalice_GetCacheDir()
+  if !exists('s:dir_cache')
+    call s:CheckEnvironment()
+  endif
+  return s:dir_cache
+endfunction
 
 function! Chalice_foldmark(id)
   if a:id == 0
@@ -362,9 +444,53 @@ function! Chalice_foldmark(id)
     return s:foldmark_1
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" DEVELOPING FUNCTIONS
-" 開発途上関数
+" DEVELOPING FUNCTIONS {{{
+" 開発途上関数もしくは未整理
+
+function! s:GetHostEncoding(host)
+  if AL_hasflag(g:chalice_readoptions, 'noenc')
+    return ''
+  else
+    if a:host =~# s:mx_servers_euc
+      if AL_hasflag(&fileencodings, 'euc-jisx0213')
+	return 'euc-jisx0213'
+      else
+	return 'euc-jp'
+      endif
+    else
+      return 'cp932'
+    endif
+  endif
+endfunction
+
+function! s:DatdirOn()
+  let datdirtool = AL_basepath(s:scriptdir).'/tools/datdir/2datdir.vim'
+  if !filereadable(datdirtool)
+    call AL_echokv('datdirtool', datdirtool)
+    call AL_echo(s:msg_error_nodatdirtool, 'ErrorMsg')
+    return 0
+  endif
+  execute 'source '.escape(datdirtool, ' ')
+  " 実行結果の検証
+  let datd = s:GetPath_Datdir()
+  let s:datdir_enabled = isdirectory(datd) && filewritable(datd)
+  if s:datdir_enabled
+    call AL_echo(s:msg_warn_datdirtoolsuccess, 'WarningMsg')
+    if exists(':ChaliceDatdirOn')
+      delcommand ChaliceDatdirOn
+    endif
+  else
+    call AL_echo(s:msg_error_datdirtoolfailed, 'ErrorMsg')
+  endif
+  return s:datdir_enabled
+endfunction
+
+function! s:HighlightWholeline(linenr, syngroup)
+  call AL_execute('match '.a:syngroup.' /^.*\%'.a:linenr.'l.*$/')
+endfunction
 
 function! s:StringFormatTime(seconds)
   let sec  = a:seconds
@@ -390,6 +516,8 @@ function! s:StartupAA(filename, wait)
   normal! G
   let oldline = line('.')
   silent! execute 'read '.a:filename
+  let insrange = line("'[").','.line("']")
+  silent! execute insrange.'s/%VERID%/'.s:version.'/g'
   " アニメーション
   if a:wait >= 0
     " 初期化
@@ -399,14 +527,13 @@ function! s:StartupAA(filename, wait)
     let save_wrap = &wrap
     set nohlsearch
     set nowrap
-    silent! execute '%s/^        /&'.spstr.'/'
-    silent! execute '%s/%VERID%/'.s:version.'/g'
+    silent! execute insrange.'s/^/'.spstr.'/'
     call AL_del_lastsearch()
     redraw
     " アニメーションループ
     let i = 0
     while i < spnum
-      silent! %s/^        /       /
+      silent! execute insrange.'s/^ //'
       redraw
       let wait = a:wait
       while wait > 0
@@ -415,12 +542,17 @@ function! s:StartupAA(filename, wait)
       let i = i + 1
     endwhile
     " 後片付け
+    call AL_del_lastsearch()
     let @/ = ''
     let &hlsearch = save_hlsearch
     let &wrap = save_wrap
   endif
   execute oldline
   return 1
+endfunction
+
+function! s:AdjustWindowSizeDefault()
+  call s:AdjustWindowSize(g:chalice_boardlist_columns, g:chalice_threadlist_lines)
 endfunction
 
 function! s:AdjustWindowSize(dirwidth, listheight)
@@ -452,10 +584,10 @@ function! s:CheckNewVersion(verurl, verpath, vercache, ...)
   endif
 
   " 各バージョン番号をファイルから読み取る
-  call AL_execute('vertical 1sview '.a:verpath)
+  call AL_execute('vertical 1sview ++enc= '.escape(a:verpath, ' '))
   setlocal bufhidden=delete
   let s:version = getline(1)
-  call AL_execute('view '.a:vercache)
+  call AL_execute('view '.escape(a:vercache, ' '))
   setlocal bufhidden=delete
   let vernew = getline(1)
   silent! bwipeout!
@@ -489,7 +621,7 @@ function! s:Cruise(flags)
     if AL_islastline() && s:opened_bookmark
       call s:GoBuf_ThreadList()
       call s:NextLine()
-      call s:Cruise('bookmark')
+      call s:Cruise(AL_delflag(AL_addflag(a:flags, 'bookmark'), 'thread'))
     else
       call AL_execute("normal! \<C-F>")
     endif
@@ -499,27 +631,32 @@ function! s:Cruise(flags)
       if foldclosed(line('.')) > 0
 	normal! zv
       endif
-      if !s:ParseURL(matchstr(getline('.'), s:mx_anchor_url))
-	call s:NextLine()
+      let curline = getline('.')
+      if !s:ParseURL(matchstr(curline, s:mx_anchor_url))
+	if exists('g:chalice_cruise_endmark') && g:chalice_cruise_endmark.'X' !=# 'X' && curline =~# '\m^\s*'.Chalice_foldmark(0).'\s*'.g:chalice_cruise_endmark.'$'
+	  break
+	else
+	  call s:NextLine()
+	endif
       else
 	" エントリーがスレッドなら新着チェック
 	normal! z.
 	" Hotlink表示
-	call AL_execute('match DiffAdd /^.*\%'.line('.').'l.*$/')
+	call s:HighlightWholeline(line('.'), 'DiffAdd')
 	" スレ読み込み。ifmodifiedが肝。
 	let retval = s:UpdateThread('', s:parseurl_host, s:parseurl_board, s:parseurl_dat, 'continue,ifmodified')
 	call s:GoBuf_ThreadList()
 	if retval > 0
 	  " 更新があった場合
-	  call AL_execute('match DiffChange /^.*\%'.line('.').'l.*$/')
+	  call s:HighlightWholeline(line('.'), 'DiffChange')
 	  call s:GoBuf_Thread()
 	  call s:AddHistoryJump(s:ScreenLine(), line('.'))
 	  while getchar(0) != 0
 	  endwhile
-	  call s:EchoH('WarningMsg', s:msg_thread_hasnewarticles)
+	  call AL_echo(s:msg_thread_hasnewarticles, 'WarningMsg')
 	else
 	  " 無かった場合
-	  call AL_execute('match Constant /^.*\%'.line('.').'l.*$/')
+	  call s:HighlightWholeline(line('.'), 'Constant')
 	  call s:NextLine()
 	  " エラーメッセージ選択
 	  if retval == -3
@@ -527,7 +664,13 @@ function! s:Cruise(flags)
 	  elseif retval == -2
 	    call s:EchoH('Error', s:msg_thread_dead)
 	  else
-	    call s:EchoH('', s:msg_thread_nonewarticle)
+	    if AL_hasflag(a:flags, 'semiauto')
+	      call s:EchoH('', s:msg_thread_nonewwait)
+	      sleep 5
+	      continue
+	    else
+	      call s:EchoH('', s:msg_thread_nonewarticle)
+	    endif
 	  endif
 	endif
 	break
@@ -553,12 +696,14 @@ function! s:AboneThreadDat()
     let title = AL_sscan(curline, s:mx_thread_dat, '\1')
     let dat = AL_sscan(curline, s:mx_thread_dat, '\3')
     let abone = s:GenerateAboneFile(b:host, b:board, dat)
+    call AL_mkdir(AL_basepath(abone))
     call AL_execute('redir! >' . abone)
     silent echo strftime("%Y/%m/%d %H:%M:%S " .title)
     silent echo ""
     redir END
     if g:chalice_threadinfo
-      call s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
+      call s:FormatThreadInfoWithoutUndo(line('.'), line('.'), 'numcheck')
+      call s:WriteFormatedCache_Subject(b:host, b:board)
     endif
   endif
 endfunction
@@ -586,9 +731,15 @@ function! s:DeleteThreadDat()
     elseif filereadable(local)
       " datファイルがあれば消去
       call delete(local)
+      " フォーマットキャッシュも削除
+      if s:fcachedir_enabled
+	call CACHEMAN_clear(s:fcachedir, s:GetPath_FormatedCache(b:host, b:board, dat))
+      endif
     endif
+    " 表示内容を更新
     if g:chalice_threadinfo
-      call s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
+      call s:FormatThreadInfoWithoutUndo(line('.'), line('.'), 'numcheck')
+      call s:WriteFormatedCache_Subject(b:host, b:board)
     endif
   endif
 endfunction
@@ -656,13 +807,15 @@ function! s:HandleURL(url, flag)
     " 板のURLかどうかを板一覧を利用して判断し、板ならばそれを開く
     let oldbuf = bufname('%')
     call s:GoBuf_BoardList()
-    if search('\V'.escape(a:url, "\\"), 'w') != 0
+    let nr = search('\V'.escape(a:url, "\\"), 'w')
+    if nr != 0
       normal! zO0z.
       execute maparg("<CR>")
+      call AL_selectwindow(oldbuf)
     else
+      call AL_selectwindow(oldbuf)
       call s:OpenURL(a:url)
     endif
-    call AL_selectwindow(oldbuf)
     return 2
   else
     " Chaliceで取り扱えるURLの時
@@ -732,6 +885,8 @@ function! s:OpenURL(url)
   call s:Redraw('force')
   if retval
     let msg =  "Open " . a:url . " with your browser"
+    " 開いたURLをDiffChangeでハイライト表示
+    execute 'match DiffChange /\V'.escape(a:url, '/').'/'
   else
     let msg = "Chalice:OpenURL is not implemented:" . a:url
   endif
@@ -813,7 +968,7 @@ function! s:UpdateThreadInfo(host, board, dat)
     endif
     if b:host . b:board ==# a:host . a:board
       if a:dat != '' && search(a:dat, 'w')
-	call s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
+	call s:FormatThreadInfoWithoutUndo(line('.'), line('.'), 'numcheck')
       endif
     endif
     call s:GoBuf_Thread()
@@ -829,7 +984,8 @@ function! s:DatCatchup_2ch(host, board, dat, flags)
   "   2. 無い場合にはdat_*の(差分)取得を試みる
   "   3. HTTP返答コードをチェックし、スレが存命なら以下はスルー
   "   4. 倉庫入りしていたら、kako_dat_*として全体を取得する
-  "   5. (未定)元のdat_*は捨てるか放置
+  "   5. 倉庫で見つからなければofflawを使用してみる
+  "   6. 元のdat_*は放置
   let remote = s:GenerateRemoteDat(a:host, a:board, a:dat)
   let local_dat  = s:GenerateLocalDat(a:host, a:board, a:dat)
   let local_kako = s:GenerateLocalKako(a:host, a:board, a:dat)
@@ -852,6 +1008,9 @@ function! s:DatCatchup_2ch(host, board, dat, flags)
     endif
     " 手順2
     let didntexist = filereadable(local_dat) ? 0 : 1
+    if didntexist
+      call AL_mkdir(AL_basepath(local_dat))
+    endif
     let result = s:HttpDownload(a:host, remote, local_dat, a:flags)
     if result < 300 || result == 304 || result == 416
       " 手順3
@@ -882,6 +1041,7 @@ function! s:DatCatchup_2ch(host, board, dat, flags)
 	  let local_kako = local_kako.'.gz'
 	endif
 	" 2度目の正直、ダウンロード
+	call AL_mkdir(AL_basepath(local_kako))
 	let result = s:HttpDownload(a:host, remote, local_kako, '')
 	if result == 200 && filereadable(local_kako)
 	  if local_kako =~ '\.gz$'
@@ -890,10 +1050,18 @@ function! s:DatCatchup_2ch(host, board, dat, flags)
 	  endif
 	  let local = local_kako
 	else
-	  " HTML化待ち
+	  " HTML化待ちと推測される
 	  call delete(local_kako)
-	  if filereadable(local_dat)
-	    let local = local_dat
+	  " 手順5
+	  " DAT落ち取得試行(要●認証)
+	  let local_kako = s:GenerateLocalKako(a:host, a:board, a:dat)
+	  if s:GetOfflawDat(a:host, a:board, a:dat, local_kako)
+	    let local = local_kako
+	  else
+	    " offlawが取れなければ既存DAT
+	    if filereadable(local_dat)
+	      let local = local_dat
+	    endif
 	  endif
 	endif " 手順4
       endif
@@ -969,21 +1137,21 @@ function! s:UpdateThread(title, host, board, dat, flags)
   endif
 
   " スレッドをバッファにロードして整形
-  if 1 && (!AL_hasflag(a:flags, 'continue') || a:host != '' || a:board != '' || a:dat != '')
+  if a:host != '' || a:board != '' || a:dat != ''
     " 開くべきスレ(URL)が異なっているので、バッファ変数へ格納
     let b:host = host
     let b:board = board
     let b:dat = dat
-    " 整形作業
-    let title = s:FormatThread(local)
-    " 常にdat内のタイトルを使用する
-    let b:title = s:prefix_thread . title
-    let b:title_raw = title
-    call append(3, 'URL: '.s:GenerateThreadURL(host, board, dat, 'raw'))
-  else
-    " 差分整形
-    call s:FormatThreadDiff(local, newarticle)
   endif
+  " 整形作業
+  if AL_hasflag(a:flags, 'ignorecache')
+    let title = s:FormatThread(local, 'ignorecache')
+  else
+    let title = s:FormatThread(local)
+  endif
+  " 常にdat内のタイトルを使用する
+  let b:title = s:prefix_thread . title
+  let b:title_raw = title
 
   if !s:GoThread_Article(newarticle)
     normal! Gzb
@@ -992,6 +1160,10 @@ function! s:UpdateThread(title, host, board, dat, flags)
   call s:EchoH('WarningMsg', s:msg_help_thread)
   " 'nostartofline'対策
   normal! 0
+  " >>1プレビュー
+  if g:chalice_preview && AL_hasflag(g:chalice_previewflags, '1')
+    call s:OpenPreview('>>1')
+  endif
   return newarticle
 endfunction
 
@@ -1023,25 +1195,52 @@ function! s:UpdateBoard(title, host, board, flag)
   " パスを生成してスレ一覧をダウンロード
   let local = s:GenerateLocalSubject(b:host, b:board)
   let remote = s:GenerateRemoteSubject(b:host, b:board)
+  if s:fcachedir_enabled
+    " DAT整形キャッシュ
+    let cacheid = s:GetPath_FormatedCache_Subject(b:host, b:board)
+    let fcachedfile = CACHEMAN_update(s:fcachedir, cacheid)
+  endif
   let updated = 0
-  if AL_hasflag(a:flag, 'force') || !filereadable(local) || localtime() - getftime(local) > g:chalice_reloadinterval_threadlist
+  let isexpired = localtime() - getftime(local) > g:chalice_reloadinterval_threadlist
+  if AL_hasflag(a:flag, 'force') || !filereadable(local) || isexpired
+    " 強制ネットアクセス→subject.txt読み込み
+    call AL_mkdir(AL_basepath(local))
     call s:HttpDownload(b:host, remote, local, '')
     let updated = 1
+    " フォーマットキャッシュを削除する
+    if s:fcachedir_enabled
+      call CACHEMAN_clear(s:fcachedir, cacheid)
+    endif
   endif
 
-  " スレ一覧をバッファにロードして整形
-  call AL_buffer_clear()
-  call AL_execute("read " . local)
-  call AL_execute("g/^$/delete _") " 空行を削除
-
-  " 整形
-  call s:FormatBoard()
+  " スレ一覧を整形、もしくはキャッシュを読み込む
+  let save_undolevels = &undolevels
+  set undolevels=-1
+  if s:fcachedir_enabled && filereadable(fcachedfile)
+    " フォーマットキャッシュを読み込む
+    call AL_buffer_clear()
+    call AL_execute('read ++enc= ' . escape(fcachedfile, ' '))
+    1 delete _
+  else
+    " スレ一覧をバッファにロードして整形
+    call AL_buffer_clear()
+    call AL_execute("read " . local)
+    call AL_execute("g/^$/delete _") " 空行を削除
+    " 整形
+    call s:FormatBoard()
+    " 整形済みキャッシュに保存する
+    if s:fcachedir_enabled
+      call AL_write(fcachedfile)
+    endif
+  endif
+  " ローカルあぼーんのスレを削除
   if !AL_hasflag(a:flag, 'showabone')
-    call AL_execute('g/^x/delete _')
+    call AL_execute('silent! g/^x/delete _')
+    call AL_del_lastsearch()
   endif
-
   " 先頭行へ移動
   silent! normal! gg0
+  let &undolevels = save_undolevels
 
   if !updated
     call s:Redraw('force')
@@ -1049,9 +1248,11 @@ function! s:UpdateBoard(title, host, board, flag)
   endif
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" 暫定的に固まった関数群 
-" FIXED FUNCTIONS
+" FIXED FUNCTIONS {{{
+" 暫定的に固まった関数群
 
 if has('perl')
   function! s:CountLines_perl(target)
@@ -1140,9 +1341,7 @@ endfunction
 " ハイライトを指定したメッセージ表示
 "
 function! s:EchoH(hlname, msgstr)
-  execute "echohl " . (a:hlname != '' ? a:hlname : 'None')
-  echo a:msgstr
-  echohl None
+  call AL_echo(a:msgstr, a:hlname)
 endfunction
 
 "
@@ -1184,7 +1383,7 @@ function! s:ChaliceClose(flag)
       call AL_execute('1vsplit '.waste_file)
       call AL_buffer_clear()
       call setline(1, s:wasted_time)
-      silent! write!
+      call AL_write()
       silent! bwipeout!
       let timestr = timestr.', '.s:label_wastetime_sum.' '.s:StringFormatTime(s:wasted_time)
     endif
@@ -1197,6 +1396,9 @@ function! s:ChaliceClose(flag)
 
   " ジャンプ履歴をクリア
   call s:JumplistClear()
+
+  " 認証データをクリア
+  call s:ResetSession()
 
   " 変更したグローバルオプションの復帰
   let &charconvert = s:charconvert
@@ -1213,7 +1415,6 @@ function! s:ChaliceClose(flag)
   let &scrolloff = s:scrolloff
   let &statusline = s:statusline
   let &titlestring = s:titlestring
-  let &undolevels = s:undolevels
 
   " Chalice関連のバッファ総てをwipeoutする。
   call AL_execute("bwipeout " . s:buftitle_write)
@@ -1235,19 +1436,26 @@ function! s:CharConvert()
   endif
 endfunction
 
-function! ChaliceDebug()
-  echo "s:sid=".s:sid
-  echo "s:cmd_curl=".s:cmd_curl
-  echo "s:cmd_conv=".s:cmd_conv
-  echo "s:cmd_gzip=".s:cmd_gzip
-  echo "s:dir_cache=".s:dir_cache
-  echo "g:chalice_bookmark=".g:chalice_bookmark
-endfunction
+if s:debug
+  function! ChaliceDebug()
+    echo "s:sid=".s:sid
+    echo "s:cmd_curl=".s:cmd_curl
+    echo "s:cmd_conv=".s:cmd_conv
+    echo "s:cmd_gzip=".s:cmd_gzip
+    echo "s:dir_cache=".s:dir_cache
+    echo "g:chalice_bookmark=".g:chalice_bookmark
+  endfunction
+endif
 
 "
 " 動作環境をチェック
 "
 function! s:CheckEnvironment()
+  " MacOSXでは必要ならば/usr/local/binをパスに追加する
+  if has('macunix') && $PATH =~# '\m\%(^\|:\)/usr/local/bin/\?\%(:\|$\)' && isdirectory('/usr/local/bin')
+    let $PATH = '/usr/local/bin:'.$PATH
+  endif
+
   " cURLのパスを取得
   let s:cmd_curl = AL_hascmd('curl')
 
@@ -1294,6 +1502,25 @@ function! s:CheckEnvironment()
       call s:Redraw('force')
       call s:EchoH('ErrorMsg', s:msg_error_nocachedir)
       return 0
+    endif
+  endif
+
+  " 旧datファイルがなければDATDIRを作成する
+  let datfiles = glob(s:dir_cache.'dat_*')
+  let datd = s:GetPath_Datdir()
+  if AL_countlines(datfiles) == 0 && !isdirectory(datd)
+    call AL_mkdir(s:GetPath_Datdir())
+  endif
+  " DATDIRが有効か調べる
+  let s:datdir_enabled = isdirectory(datd) && filewritable(datd)
+
+  " DATDIRが有効ならばフォーマットキャッシュを有効にする
+  let s:fcachedir_enabled = 0
+  if s:datdir_enabled
+    let s:fcachedir = s:dir_cache.'format.d'
+    if AL_mkdir(s:fcachedir)
+      let s:fcachedir_enabled = 1
+      call CACHEMAN_flush(s:fcachedir, g:chalice_formatedcache_expire)
     endif
   endif
 
@@ -1367,7 +1594,6 @@ function! s:ChaliceOpen()
   let s:scrolloff = &scrolloff
   let s:statusline = &statusline
   let s:titlestring = &titlestring
-  let s:undolevels = &undolevels
 
   " グローバルオプションを変更
   if s:cmd_conv != ''
@@ -1388,7 +1614,6 @@ function! s:ChaliceOpen()
   set scrolloff=0
   let &statusline = '%<%{' . s:sid . 'GetBufferTitle()}%='.g:chalice_statusline.'%{'.s:sid.'GetDatStatus()} %{'.s:sid.'GetStatus_ThreadNum()}'
   " let &titlestring = s:label_vimtitle " UpdateTitleString()参照
-  set undolevels=0
 
   " foldmarksの初期化
   let mx = '^\(.\)\(.\)$'
@@ -1402,7 +1627,7 @@ function! s:ChaliceOpen()
   " 起動最終準備
   call s:CommandRegister()
   call s:OpenAllChaliceBuffers()
-  call s:AdjustWindowSize(15, 10)
+  call s:AdjustWindowSizeDefault()
 
   " あらゆるネットアクセスの前にオフラインモードフラグを設定
   let s:dont_download = AL_hasflag(g:chalice_startupflags, 'offline') ? 1 : 0
@@ -1410,7 +1635,7 @@ function! s:ChaliceOpen()
   call s:UpdateBoardList(0)
 
   " バージョンチェック
-  if 1
+  if 1 && !AL_hasflag(g:chalice_startupflags, 'novercheck')
     let ver_cache = s:dir_cache.'VERSION'
     if 0 < s:CheckNewVersion(s:verchk_verurl, s:verchk_path, ver_cache, s:verchk_interval)
       call s:GoBuf_Thread()
@@ -1433,12 +1658,13 @@ function! s:ChaliceOpen()
   endif
 
   " 起動AA表示
-  if 1
+  let aaflag = AL_getflagparam(g:chalice_startupflags, 'aa')
+  if 1 && aaflag !=# 'no'
     let startup = g:chalice_basedir.'/startup.aa'
     if !filereadable(startup)
       let startup = s:scriptdir.'/../startup.aa'
     endif
-    call s:StartupAA(startup, AL_hasflag(g:chalice_startupflags, 'noanime') ? -1 : g:chalice_animewait)
+    call s:StartupAA(startup, aaflag ==# 'noanime' ? -1 : g:chalice_animewait)
   endif
 
   " 累積稼動時間を表示
@@ -1446,20 +1672,23 @@ function! s:ChaliceOpen()
     let s:start_time = localtime()
     let waste_file = s:dir_cache.'WASTED'
     if filereadable(waste_file)
-      call AL_execute('vertical 1sview '.waste_file)
+      call AL_execute('vertical 1sview ++enc= '.waste_file)
       setlocal bufhidden=delete
       let s:wasted_time = getline(1) + 0
       silent! bwipeout!
     else
       let s:wasted_time = 0
     endif
+    call s:GoBuf_Thread()
     call append('$', 'Info: '.s:label_wastetime_sum.' '.s:StringFormatTime(s:wasted_time))
     call append('$', 'Info: '.s:msg_warn_dontusetoomuch)
   endif
 
-  " ブックマークへカーソルを移動する
+  " カーソルを初期位置へ移動する
   if AL_hasflag(g:chalice_startupflags, 'bookmark')
     call s:GoBuf_ThreadList()
+  else
+    call s:GoBuf_BoardList()
   endif
 
   " 開始メッセージ表示
@@ -1503,9 +1732,9 @@ function! s:DoExternalCommand(cmd)
   if g:chalice_verbose < 1
     return system(extcmd)
   elseif g:chalice_verbose < 2
-    call AL_execute(':!' . extcmd)
+    call AL_execute(':!' . escape(extcmd, '%#'))
   else
-    execute ':!' . extcmd
+    execute ':!' . escape(extcmd, '%#')
   endif
 endfunction
 
@@ -1549,9 +1778,6 @@ function! s:OpenThread(...)
 
   if retval == 1 && !AL_hasflag(flag, 'external')
     call s:AddHistoryJump(s:ScreenLine(), line('.'))
-    if g:chalice_preview && AL_hasflag(g:chalice_previewflags, '1')
-      call s:OpenPreview('>>1')
-    endif
   endif
 endfunction
 
@@ -1592,6 +1818,9 @@ function! s:OpenBoard(...)
 
   if a:0 > 0 && AL_hasflag(a:1, 'external')
     return s:OpenURL(url)
+  endif
+  if bufname('%') ==# s:buftitle_boardlist
+    call s:HighlightWholeline(line('.'), 'DiffChange')
   endif
   call s:UpdateBoard(title, host, board, '')
   return 1
@@ -1787,7 +2016,7 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
 
   " 生dat読み込み制限に対応
   if s:user_agent_enable
-    let opts = opts . ' -A ' . AL_quote(s:user_agent)
+    let opts = opts . ' -A ' . AL_quote(s:GetUserAgent())
   endif
 
   " ファイルに更新がある時だけ、実際の転送を試みる(If-Modified-Since)
@@ -1825,7 +2054,11 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
   let opts = opts . ' ' . AL_quote(url)
 
   " ダウンロード実行
-  call s:DoExternalCommand(s:cmd_curl . ' ' . opts)
+  let cmd = s:cmd_curl.' '.opts
+  if s:debug
+    let s:last_downloadcommand = cmd
+  endif
+  call s:DoExternalCommand(cmd)
 
   " ヘッダー情報取得→テンポラリファイル削除
   call AL_execute('1vsplit ' . tmp_head)
@@ -1851,7 +2084,13 @@ function! s:UpdateBoardList(force)
   call s:GoBuf_BoardList()
   let b:title = s:label_boardlist
 
+  " ネットワークから板一覧のデータを取得する
   let local_menu = s:dir_cache . s:menu_localpath
+  if s:fcachedir_enabled
+    " 板一覧整形キャッシュ
+    let cacheid = s:menu_localpath.'.'.&encoding.'.txt'
+    let fcachedfile = CACHEMAN_update(s:fcachedir, cacheid)
+  endif
   " 板一覧の読み込み
   if a:force || !filereadable(local_menu) || localtime() - getftime(local_menu) > g:chalice_reloadinterval_boardlist
     let mx = '^http://\([^/]\+\)/\(.*\)$'
@@ -1885,22 +2124,41 @@ function! s:UpdateBoardList(force)
 
     " メニューファイルの読込
     call s:HttpDownload(menu_host, menu_remotepath, local_menu, '')
+
+    " フォーマットキャッシュを削除する
+    if s:fcachedir_enabled
+      call CACHEMAN_clear(s:fcachedir, cacheid)
+    endif
   endif
 
-  " 板一覧の整形
-  call AL_buffer_clear()
-  call AL_execute('read ' . local_menu)
-  " 改行<BR>を本当の改行に
-  call AL_execute("%s/\\c<br>/\r/g")
-  " カテゴリと板へのリンク以外を消去
-  call AL_execute('%g!/^\c<[AB]\>/delete _')
-  " カテゴリを整形
-  call AL_execute('%s/^<B>\([^<]*\)<\/B>/' . Chalice_foldmark(0) . '\1/')
-  " 板名を整形
-  call AL_execute('%s/^<A HREF=\([^ ]*\/\)[^/>]*>\([^<]*\)<\/A>/ \2\t\t\t\t\1')
-  " 「2ch総合案内」を削除…本当はちゃんとチェックしなきゃダメだけど。
-  normal! gg
-  call AL_execute("1,/^" . Chalice_foldmark(0) . "/-1delete _")
+  " 板一覧を整形もしくはキャッシュを読み込む
+  let save_undolevels = &undolevels
+  set undolevels=-1
+  if s:fcachedir_enabled && filereadable(fcachedfile)
+    " フォーマットキャッシュを読み込む
+    call AL_buffer_clear()
+    call AL_execute('read ++enc= ' . escape(fcachedfile, ' '))
+    silent! normal! gg"_dd0
+  else
+    " 板一覧の整形
+    call AL_buffer_clear()
+    call AL_execute('read ' . local_menu)
+    " 改行<BR>を本当の改行に
+    call AL_execute("%s/\\c<br>/\r/g")
+    " カテゴリと板へのリンク以外を消去
+    call AL_execute('%g!/^\c<[AB]\>/delete _')
+    " カテゴリを整形
+    call AL_execute('%s/^<B>\([^<]*\)<\/B>/' . Chalice_foldmark(0) . '\1/')
+    " 板名を整形
+    call AL_execute('%s/^<A HREF=\([^ ]*\/\)[^/>]*>\([^<]*\)<\/A>/ \2\t\t\t\t\1')
+    " 「2ch総合案内」を削除…本当はちゃんとチェックしなきゃダメだけど。
+    normal! gg
+    call AL_execute("1,/^" . Chalice_foldmark(0) . "/-1delete _")
+    if s:fcachedir_enabled
+      call AL_write(fcachedfile)
+    endif
+  endif
+  let &undolevels = save_undolevels
 
   " folding作成
   if 1
@@ -1926,8 +2184,10 @@ function! ChaliceIsRunning()
   return s:opened
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" MOVE AROUND BUFFER
+" MOVE AROUND BUFFER {{{
 " バッファ移動用関数
 
 function! s:GetLnum_Article(num)
@@ -2015,8 +2275,10 @@ function! s:GoBuf_ThreadList()
   return retval
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" JUMPLIST
+" JUMPLIST {{{
 " 独自のジャンプリスト
 
 let s:jumplist_current = 0
@@ -2157,8 +2419,10 @@ function! s:DoHistoryJump(flag)
   endif
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" PREVIEW FUNCTIONS
+" PREVIEW FUNCTIONS {{{
 
 function! s:OpenPreview_autocmd()
   if g:chalice_preview
@@ -2280,7 +2544,7 @@ function! s:OpenPreview2(host, board, dat, nstart, nend)
 
   " プレビューの中身を作成する
   let save_reg = @"
-  let @" = s:FormatThreadPartial(local, a:nstart, a:nend)
+  let @" = s:FormatThreadPartial(local, a:nstart, a:nend, s:GetHostEncoding(a:host))
   call s:GoBuf_Preview()
   if @" == ''
     let @" = save_reg
@@ -2310,8 +2574,10 @@ function! s:TogglePreview()
   call s:EchoH('WarningMsg', g:chalice_preview ? s:msg_warn_preview_on : s:msg_warn_preview_off)
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" 2HTML
+" 2HTML {{{
 " HTML化
 "
 
@@ -2368,8 +2634,10 @@ function! s:ShowWithHtml(...)
   endif
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" BOOKMARK FUNCTIONS
+" BOOKMARK FUNCTIONS {{{
 " Bookmarkルーチン
 "
 let s:opened_bookmark = 0
@@ -2384,11 +2652,16 @@ function! s:OpenBookmark()
   call s:GoBuf_ThreadList()
   let s:opened_bookmark = line('.') ? line('.') : 1
   let b:title = s:label_bookmark
+
   " 栞データの読込み
+  let save_undolevels = &undolevels
+  set undolevels=-1
   call AL_buffer_clear()
   setlocal filetype=2ch_bookmark
   call AL_execute("read " . g:chalice_bookmark)
   silent! normal! gg"_dd0
+  let &undolevels = save_undolevels
+
   call s:Redraw('force')
   call s:EchoH('WarningMsg', s:msg_warn_bookmark)
 endfunction
@@ -2415,7 +2688,10 @@ function! s:CloseBookmark()
   endif
   " ブックマークファイルを保存
   call AL_execute("%write! " . g:chalice_bookmark)
+  let save_undolevels = &undolevels
+  set undolevels=-1
   call AL_buffer_clear()
+  let &undolevels = save_undolevels
 
   " ftをセットした瞬間に必要なバッファ変数が消去されてしまうので、その対策。
   " 消去されるバッファ変数は ftplugin/2ch_threadlist.vim 参照:
@@ -2450,7 +2726,7 @@ function! s:AddBookmark(title, url)
     normal! 0zz
     " 問い合わせ
     echohl Question
-    call AL_execute('match Search /^.*\%'.existedbookmark.'l.*$/')
+    call s:HighlightWholeline(existedbookmark, 'Search')
     call s:Redraw('force')
     let last_confirm = input(s:msg_confirm_replacebookmark)
     match none
@@ -2546,8 +2822,10 @@ function! s:Thread2Bookmark(target)
   endif
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" WRITE BUFFER
+" WRITE BUFFER {{{
 " 書き込みバッファルーチン
 "
 
@@ -2636,11 +2914,13 @@ function! s:OpenWriteBuffer(...)
   let b:url = 'http://'.host.'/test/read.cgi/'.bbs.'/'.key
   " hiddenなtimeパラメータの生成を、書き込み時ではなくバッファ作成時にする
   let b:gentime = localtime()
-  call AL_buffer_clear()
 
   call s:Redraw('')
 
   " 書き込みテンプレート作成
+  let save_undolevels = &undolevels
+  set undolevels=-1
+  call AL_buffer_clear()
   let def = ''
   let def = def . 'Title: ' . title . "\<CR>"
   let def = def . 'From: ' . username . "\<CR>"
@@ -2648,11 +2928,23 @@ function! s:OpenWriteBuffer(...)
   let def = def . "--------\<CR>"
   let def = def . quoted
   execute "normal! i" . def . "\<ESC>"
-
   let s:opened_write = 1
-  call s:Redraw('force')
-  call s:EchoH('WarningMsg', s:msg_help_write)
-  startinsert
+  let &undolevels = save_undolevels
+
+  " 書き込みに失敗した文章があれば自動的に追加。
+  " なければインサートモード開始。
+  if exists('g:chalice_lastmessage') && g:chalice_lastmessage != ''
+    let save_reg = @"
+    let @" = g:chalice_lastmessage
+    normal! Gp
+    let @" = save_reg
+    call s:Redraw('force')
+    call s:EchoH('WarningMsg', s:msg_help_rewrite)
+  else
+    call s:Redraw('force')
+    call s:EchoH('WarningMsg', s:msg_help_write)
+    startinsert
+  endif
 endfunction
 
 "
@@ -2666,6 +2958,11 @@ function! s:DoWriteBuffer(flag)
   let newthread = b:newthread
   " 書き込み実行
   let write_result =  s:DoWriteBufferStub(a:flag)
+
+  " 書き込みに成功した時には最終メッセージをクリアする
+  if write_result != 0
+    let g:chalice_lastmessage = ''
+  endif
 
   " 書き込み後のバッファ処理
   if AL_hasflag(a:flag, '\cclosing')
@@ -2787,6 +3084,7 @@ function! s:DoWriteBufferStub(flag)
     " したらば系では&amp;と&nbsp;への置換えはサーバ側で行なわれる
     let writeoptions = AL_delflag(writeoptions, 'amp')
     let writeoptions = AL_delflag(writeoptions, 'nbsp')
+    let writeoptions = AL_delflag(writeoptions, 'nbsp2')
   endif
   " &記号を&amp;に置換
   if AL_hasflag(writeoptions, 'amp')
@@ -2799,6 +3097,11 @@ function! s:DoWriteBufferStub(flag)
   " 半角スペースを&nbsp;に置換
   if AL_hasflag(writeoptions, 'nbsp')
     let message = substitute(message, ' ', '\&nbsp;', 'g')
+  endif
+  " &nbsp;への展開を最小限にする
+  if AL_hasflag(writeoptions, 'nbsp2')
+    "let message = substitute(message, '  ', ' \&nbsp;', 'g')
+    let message = substitute(message, '\(^\|'."\n".'\| \) ', '\1\&nbsp;', 'g')
   endif
 
   " 書き込みデータチャンク作成
@@ -2854,6 +3157,9 @@ function! s:DoWriteBufferStub(flag)
   execute "redir! > " . tmpfile 
   silent echo chunk
   redir END
+  if s:debug
+    let g:chalice_lastchunk = chunk
+  endif
 
   " 書き込みコマンドの発行
   "   必要なデータ変数: tmpflie, b:host, b:bbs
@@ -2861,7 +3167,7 @@ function! s:DoWriteBufferStub(flag)
   " 起動オプションの構築→cURLの実行
   let opts = g:chalice_curl_options
   if s:user_agent_enable
-    let opts = opts . ' -A ' . AL_quote(s:user_agent)
+    let opts = opts . ' -A ' . AL_quote(s:GetUserAgent())
   endif
   let opts = opts . ' -b NAME= -b MAIL='
   if g:chalice_curl_cookies != 0 && exists('g:chalice_cookies')
@@ -2906,7 +3212,7 @@ function! s:DoWriteBufferStub(flag)
   " 結果ファイルをHTMLで表示
   if show_resfile
     let temp = s:dir_cache.'tmp.html'
-    call AL_execute('write! ' . temp)
+    call AL_write(temp)
     call AL_open_url('file://'.temp, g:chalice_exbrowser)
   endif
   silent! bwipeout!
@@ -2943,10 +3249,7 @@ function! s:CreateWriteChunk(host, board, key, title, name, mail, message, ...)
   endif
 
   " ホストに合わせて書き込みエンコーディングを決定
-  let enc_write = 'cp932'
-  if a:host =~ s:mx_servers_euc
-    let enc_write = 'euc-jisx0213'
-  endif
+  let enc_write = s:GetHostEncoding(a:host)
 
   " 文字コード変換
   let title = a:title
@@ -2984,25 +3287,86 @@ function! s:CreateWriteChunk_2ch(host, board, key, title, name, mail, message, s
   let flags = a:0 > 0 ? a:1 : ''
   let chunk = ''
   let chunk = chunk . 'submit=' . a:submitkey
+  let chunk = chunk . '&FROM=' . AL_urlencode(a:name)
+  let chunk = chunk . '&mail=' . AL_urlencode(a:mail)
+  let chunk = chunk . '&MESSAGE=' . AL_urlencode(a:message)
+  let chunk = chunk . '&bbs=' . a:board
   if !AL_hasflag(flags, 'new')
     let chunk = chunk . '&key=' . a:key
   else
     let chunk = chunk . '&subject=' . AL_urlencode(a:title)
   endif
-  let chunk = chunk . '&FROM=' . AL_urlencode(a:name)
-  let chunk = chunk . '&mail=' . AL_urlencode(a:mail)
-  let chunk = chunk . '&MESSAGE=' . AL_urlencode(a:message)
-  let chunk = chunk . '&bbs=' . a:board
   let chunk = chunk . '&time=' . (exists('b:gentime') ? b:gentime : localtime())
+  " SIDがある場合は追加する
+  let chunk = s:AddSidToChunk(chunk)
   return chunk
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" FILENAMES
+" GENERATE FILENAMES {{{
 " ファイル名の生成
 
+function! s:GetPath_FormatedCache_Subject(host, board)
+  return s:GetPath_FormatedCache(a:host, a:board, 'subject')
+endfunction
+
+function! s:GetPath_FormatedCache(host, board, dat)
+  return s:RegularlisePath(a:host.a:board).'_'.s:RegularliseDat(a:dat).'.'.&encoding.'.txt'
+endfunction
+
+function! s:GetPath_Datdir_Skelton(host, board, dat, ext)
+  let hostdir = s:GetPath_Datdir_Host(a:host)
+  if hostdir.'X' ==# 'X'
+    return ''
+  else
+    return hostdir.s:RegularlisePath(a:board).'_'.s:RegularliseDat(a:dat).a:ext
+  endif
+endfunction
+
+function! s:GetPath_Datdir_Dat(host, board, dat)
+  return s:GetPath_Datdir_Skelton(a:host, a:board, a:dat, '.dat')
+endfunction
+
+function! s:GetPath_Datdir_Kako(host, board, dat)
+  return s:GetPath_Datdir_Skelton(a:host, a:board, a:dat, '.kako')
+endfunction
+
+function! s:GetPath_Datdir_Abone(host, board, dat)
+  return s:GetPath_Datdir_Skelton(a:host, a:board, a:dat, '.abone')
+endfunction
+
+function! s:GetPath_Datdir_Subject(host, board)
+  return s:GetPath_Datdir_Skelton(a:host, a:board, 'subject', '.txt')
+endfunction
+
+" ホスト用のDATDIRのパスを返す。
+function! s:GetPath_Datdir_Host(host)
+  return s:GetPath_Datdir().s:RegularlisePath(a:host).'/'
+endfunction
+
+" DATDIR用ディレクトリを取得する。
+function! s:GetPath_Datdir()
+  return s:dir_cache.'dat.d/'
+endfunction
+
+" Chaliceで使用するリモートパスを正規化する
+function! s:RegularlisePath(path)
+  return substitute(substitute(a:path, '/', '_', 'g'), '^_\|_$', '', '')
+endfunction
+
+" Chaliceで使用するDAT識別子の拡張子を削除、正規化する
+function! s:RegularliseDat(dat)
+  return substitute(a:dat, '\m.\(dat\|cgi\)$', '', '')
+endfunction
+
 function! s:GenerateAboneFile(host, board, dat)
-  return s:dir_cache . 'abonedat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.\(dat\|cgi\)$', '', '')
+  if s:datdir_enabled
+    return s:GetPath_Datdir_Abone(a:host, a:board, a:dat)
+  else
+    return s:dir_cache .'abonedat_'. s:RegularlisePath(a:host.a:board) .'_'. s:RegularliseDat(a:dat)
+  endif
 endfunction
 
 function! s:GenerateDatname(host, board, dat)
@@ -3026,71 +3390,214 @@ function! s:GenerateRemoteDat(host, board, dat)
 endfunction
 
 function! s:GenerateLocalDat(host, board, dat)
-  return s:dir_cache . 'dat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.\(dat\|cgi\)$', '', '')
-endfunction
-
-function! s:GenerateLocalKako(host, board, dat)
-  return s:dir_cache . 'kako_dat_' . substitute(a:host . a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.\(dat\|cgi\)$', '', '')
-endfunction
-
-function! s:GenerateLocalSubject(host, board)
-  return s:dir_cache . 'subject_' . substitute(a:host . a:board, '/', '_', 'g')
-endfunction
-
-"------------------------------------------------------------------------------
-" FORMATTING
-" 各ペインの整形
-
-function! s:ShowNumberOfArticle(flags)
-  if AL_hasflag(a:flags, 'all')
-    call s:FormatThreadInfo(1, 0, 'numcheck')
-  elseif AL_hasflag(a:flags, 'curline')
-    call s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
+  if s:datdir_enabled
+    return s:GetPath_Datdir_Dat(a:host, a:board, a:dat)
+  else
+    return s:dir_cache .'dat_'. s:RegularlisePath(a:host.a:board) .'_'. s:RegularliseDat(a:dat)
   endif
 endfunction
 
-function! s:FormatThread(local)
+function! s:GenerateLocalKako(host, board, dat)
+  if s:datdir_enabled
+    return s:GetPath_Datdir_Kako(a:host, a:board, a:dat)
+  else
+    return s:dir_cache .'kako_dat_'. s:RegularlisePath(a:host.a:board) .'_'. s:RegularliseDat(a:dat)
+  endif
+endfunction
+
+function! s:GenerateLocalSubject(host, board)
+  if s:datdir_enabled
+    return s:GetPath_Datdir_Subject(a:host, a:board)
+  else
+    return s:dir_cache .'subject_'. s:RegularlisePath(a:host.a:board)
+  endif
+endfunction
+
+"}}}
+
+"------------------------------------------------------------------------------
+" FORMATTING {{{
+" 各ペインの整形
+
+function! s:WriteFormatedCache_Subject(host, board)
+  if s:fcachedir_enabled
+    let cacheid = s:GetPath_FormatedCache_Subject(a:host, a:board)
+    let fcachedfile = CACHEMAN_update(s:fcachedir, cacheid)
+    call AL_write(fcachedfile)
+  endif
+endfunction
+
+function! s:ShowNumberOfArticle(flags)
+  " スレ一覧の既得スレ数を更新
+  let save_undolevels = &undolevels
+  set undolevels=-1
+  if AL_hasflag(a:flags, 'all')
+    let retval = s:FormatThreadInfo(1, 0, 'numcheck')
+  elseif AL_hasflag(a:flags, 'curline')
+    let retval = s:FormatThreadInfo(line('.'), line('.'), 'numcheck')
+  endif
+  let &undolevels = save_undolevels
+  " フォーマットキャッシュを更新
+  if retval > 0
+    call s:WriteFormatedCache_Subject(b:host, b:board)
+  endif
+endfunction
+
+function! s:RemoveNGWords()
+  " NGワードの削除
+  if exists('g:chalice_ngwords') && g:chalice_ngwords.'X' !=# 'X'
+    " ローカルあぼーん用置換え文字列を構築
+    let mx = '\m^\([^,]*\),\([^,]*\),\([^,]*\)$'
+    let label = substitute(g:chalice_localabone, '[<>]', '', 'g')
+    if label !~# mx
+      let label = s:label_localabone
+    endif
+    let localabone = AL_sscan(label, mx, '\1').'<>'.AL_sscan(label, mx, '\2').'<><>'.AL_sscan(label, mx, '\3').'<>'
+    " 各単語に対してローカルあぼーんを判定していく
+    let ngwords = g:chalice_ngwords
+    while ngwords != ''
+      let ngw = AL_firstline(ngwords)
+      let ngwords = AL_lastlines(ngwords)
+      if ngw != ''
+	call AL_execute('silent! g/'.ngw."/call setline('.','".localabone."')")
+      endif
+    endwhile
+    call AL_del_lastsearch()
+  endif
+endfunction
+
+function! s:UpdateFormatCache()
+  " フォーマットキャッシュの更新
+  if s:fcachedir_enabled && exists('b:host') && exists('b:board') && exists('b:dat')
+    " DAT整形キャッシュ(書き込み)
+    let cacheid = s:GetPath_FormatedCache(b:host, b:board, b:dat)
+    let filename = CACHEMAN_update(s:fcachedir, cacheid)
+    "call AL_echokv('filename', filename)
+    if filename.'X' !=# 'X'
+      call AL_write(filename)
+    endif
+  endif
+endfunction
+
+function! s:FormatThreadWhole(local, enc)
   " バッファクリアとスレdatの読み込み
   call AL_buffer_clear()
-  call AL_execute("read " . a:local)
+  if a:enc.'X' !=# 'X'
+    call AL_execute('read ++enc='.a:enc.' '.a:local)
+  else
+    call AL_execute('read '.a:local)
+  endif
   normal! gg"_dd
   " 最終記事番号を取得
   let b:chalice_lastnum = line('$')
+  " NGワード
+  call s:RemoveNGWords()
   " Do the 整形
   call s:EchoH('WarningMsg', s:msg_wait_threadformat)
   let retval = Dat2Text(g:chalice_verbose > 0 ? 'verbose' : '')
   " Board表示追加
-  if exists('b:host') && exists('b:board')
+  if exists('b:host') && exists('b:board') && exists('b:dat')
     call append(2, 'Board: '.s:GenerateBoardURL(b:host, b:board))
+    call append(3, 'URL: '.s:GenerateThreadURL(b:host, b:board, b:dat, 'raw'))
+    " フォーマットキャッシュの更新
+    call s:UpdateFormatCache()
   endif
   return retval
 endfunction
 
-function! s:FormatThreadDiff(local, newarticle)
-  let contents = s:FormatThreadPartial(a:local, a:newarticle, -1)
-  " スレバッファへ挿入
-  let save_reg = @"
-  let @" = contents
-  call s:GoBuf_Thread()
-  normal! G$""p
-  let @" = save_reg
-  " 最終記事番号を保存
-  let b:chalice_lastnum = s:GetArticleNum('$')
+function! s:FormatThread(local, ...)
+  let flags = a:0 > 0 ? a:1 : ''
+  let fcachedfile = ''
+  " キャッシュ済みファイルの検索
+  if s:fcachedir_enabled && exists('b:host') && exists('b:board') && exists('b:dat')
+    let cacheid = s:GetPath_FormatedCache(b:host, b:board, b:dat)
+    if AL_hasflag(flags, 'ignorecache')
+      call CACHEMAN_clear(s:fcachedir, cacheid)
+    else
+      let fcachedfile = CACHEMAN_getpath(s:fcachedir, cacheid)
+    endif
+  endif
+
+  " スレ整形作業
+  let retval = 0
+  let save_undolevels = &undolevels
+  set undolevels=-1
+  if fcachedfile.'X' !=# 'X' && filereadable(fcachedfile)
+    " 存在すればフォーマットキャッシュを読み込み、差分を整形する。
+    call AL_buffer_clear()
+    call AL_execute("read ++enc= " . fcachedfile)
+    normal! gg"_dd
+    call s:FormatThreadDiff(a:local, s:GetArticleNum('$') + 1, s:GetHostEncoding(b:host))
+    let retval = s:formatthreadpartion_title
+  else
+    if exists('b:host')
+      let retval = s:FormatThreadWhole(a:local, s:GetHostEncoding(b:host))
+    else
+      let retval = s:FormatThreadWhole(a:local, '')
+    endif
+  endif
+  let &undolevels = save_undolevels
+  return retval
 endfunction
 
-function! s:FormatThreadPartial(local, n_start, n_end)
-  call AL_execute('vertical 1sview '.a:local)
+function! s:FormatThreadDiff(local, newarticle, enc)
+  let contents = s:FormatThreadPartial(a:local, a:newarticle, -1, a:enc)
+  " スレバッファへ挿入
+  if AL_countlines(contents) > 0
+    let save_reg = @"
+    let @" = contents
+    call s:GoBuf_Thread()
+    normal! G$""p
+    let @" = save_reg
+  else
+    call s:GoBuf_Thread()
+    normal! G0
+  endif
+  " 最終記事番号を保存
+  let b:chalice_lastnum = s:GetArticleNum('$')
+  " DATサイズを更新
+  let b:datutil_datsize = getfsize(a:local)
+  call setline(2, 'Size: '.(b:datutil_datsize / 1024).'KB')
+  " フォーマットキャッシュの更新
+  call s:UpdateFormatCache()
+endfunction
+
+function! s:FormatThreadPartial(local, n_start, n_end, enc)
+  if a:enc.'X' !=# 'X'
+    call AL_execute('vertical 1sview ++enc='.a:enc.' '.a:local)
+  else
+    call AL_execute('vertical 1sview '.a:local)
+  endif
+  call s:RemoveNGWords()
   let s:formatthreadpartion_title = DatGetTitle()
   " 整形作業
   let contents = ''
   let i = a:n_start
   let n_end = a:n_end < 0 || a:n_end > line('$') ? line('$') : a:n_end
+  let on_verbose = 0
+  if n_end - a:n_start > 50
+    call AL_echo(s:msg_wait_threadformat, 'WarningMsg')
+    if g:chalice_verbose > 0
+      let on_verbose = 1
+    endif
+  endif
   while i <= n_end
+    if on_verbose  && i % 100 == 0
+      call AL_echo(i.'/'.n_end, 'WarningMsg')
+    endif
     let contents =  contents ."\r". DatLine2Text(i, getline(i))
     let i = i + 1
   endwhile
   silent! bwipeout!
   return substitute(contents, "\r", "\<NL>", 'g')
+endfunction
+
+function! s:FormatThreadInfoWithoutUndo(startline, endline, ...)
+  let save_undolevels = &undolevels
+  set undolevels=-1
+  let flags = a:0 > 0 ? a:1 : ''
+  call s:FormatThreadInfo(a:startline, a:endline, flags)
+  let &undolevels = save_undolevels
 endfunction
 
 "
@@ -3100,12 +3607,14 @@ function! s:FormatThreadInfo(startline, endline, ...)
   call s:GoBuf_ThreadList()
   " バッファがスレ一覧ではなかった場合、即終了
   if s:opened_bookmark || b:host == '' || b:board == ''
-    return
+    return 0
   endif
   let flags = a:0 > 0 ? a:1 : ''
 
+  let modified = 0
   let i = a:startline
   let lastline = a:endline ? a:endline : line('$')
+  let threshold_time = localtime() - g:chalice_threadinfo_expire
 
   " 各スレのdatファイルが存在するかチェックし、存在する場合には最終取得時刻
   " をチェックし、それによって強調の仕方を変える。
@@ -3114,7 +3623,11 @@ function! s:FormatThreadInfo(startline, endline, ...)
   while i <= lastline
     let curline = getline(i)
     if curline =~ s:mx_thread_dat
-      let dat = AL_sscan(curline, s:mx_thread_dat, '\3')
+      " タイトル、書き込み数、dat名を取得
+      let title = AL_sscan(curline, s:mx_thread_dat, '\1')
+      let point = AL_sscan(curline, s:mx_thread_dat, '\2') + 0
+      let dat	= AL_sscan(curline, s:mx_thread_dat, '\3')
+      " ローカルDAT、Aboneフラグファイルを取得
       let local = s:GenerateLocalDat(b:host, b:board, dat)
       let abone = s:GenerateAboneFile(b:host, b:board, dat)
       " ファイルが存在するならばファイル情報を取得
@@ -3125,36 +3638,34 @@ function! s:FormatThreadInfo(startline, endline, ...)
 	let indicator = 'x'
       elseif filereadable(local)
 	let lasttime = getftime(local)
-	let indicator = localtime() - lasttime > g:chalice_threadinfo_expire ? '+' : '*'
+	let indicator = threshold_time > lasttime ? '+' : '*'
 	let time = strftime("%Y/%m/%d %H:%M:%S", lasttime)
 	" 既存の書込み数をチェック
 	if AL_hasflag(flags, 'numcheck')
 	  let artnum = s:CountLines(local)
+	  if artnum > 0
+	    if point > artnum
+	      let indicator = '!'
+	    else
+	      let point = artnum
+	    endif
+	  endif
+	else
+	  let artnum = -1
 	endif
       endif
-      " タイトルと書き込み数を取得
-      let title = AL_sscan(curline, s:mx_thread_dat, '\1')
-      let point = AL_sscan(curline, s:mx_thread_dat, '\2')
-      let point = matchstr(point, '\d\+$')
-      " 書き込み数を表示に反映
-      if artnum > 0
-	if point > artnum
-	  let indicator = '!'
-	endif
-      endif
-      let numloc = artnum == 0 && filereadable(local) ? '???' : artnum
-      let numrem = point < artnum ? artnum : point
-      let point = numloc .'/'. numrem
       " ラインの内容が変化していたら設定
-      let newline = indicator . ' ' . title . ' (' . point . ') ' . time . "\t\t\t\t" . dat
+      let newline = indicator.' '.title.' ('.(artnum >= 0 ? artnum : '???').'/'. point.') '.time."\t\t\t\t".dat
       if curline !=# newline
 	call setline(i, newline)
+	let modified = modified + 1
       endif
     endif
     let i = i + 1
   endwhile
 
   normal! 0
+  return modified
 endfunction
 
 function! s:FormatBoard()
@@ -3191,8 +3702,10 @@ function! s:FormatBoard()
   endif
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" BBS WRAPPER
+" BBS WRAPPER {{{
 " BBSの種別を隠蔽するためのラッパー
 "
 
@@ -3282,8 +3795,10 @@ function! s:ParseURL(url)
   return retval
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" JBBS
+" JBBS {{{
 " JBBS/したらば/まちBBS対応用
 "
 
@@ -3372,6 +3887,7 @@ endfunction
 
 function! s:DatCatchup_JBBS(host, board, dat, flags)
   let local = s:GenerateLocalDat(a:host, a:board, a:dat)
+  call AL_mkdir(AL_basepath(local))
   let prevsize = getfsize(local)
   let oldarticle = 0
   " 差分取得用のフラグ
@@ -3492,8 +4008,140 @@ function! s:CreateWriteChunk_JBBS(host, board, key, title, name, mail, message, 
   return chunk
 endfunction
 
+"}}}
+
 "------------------------------------------------------------------------------
-" COMMAND REGISTER
+" AUTHENTICATION FUNCTIONS {{{
+" 2ch認証関連
+
+let s:sessionid = ''
+let s:last_loginid = ''
+let s:last_password = ''
+
+if s:debug
+  function! ChaliceDebugLogin()
+    call AL_echokv('DOLIB_get_useragent(s:sessionid)', DOLIB_get_useragent(s:sessionid))
+    call AL_echokv('DOLIB_get_sessionid(s:sessionid)', DOLIB_get_sessionid(s:sessionid))
+    call AL_echon(' '.strlen(DOLIB_get_sessionid(s:sessionid)), 'WarningMsg')
+    call AL_echokv('DOLIB_get_logintime(s:sessionid)', DOLIB_get_logintime(s:sessionid))
+    call AL_echokv('s:last_loginid', s:last_loginid)
+    call AL_echokv('s:last_password', s:last_password)
+    if exists('g:chalice_lastchunk')
+      call AL_echokv('g:chalice_lastchunk', g:chalice_lastchunk)
+    endif
+    if exists('s:last_downloadcommand')
+      call AL_echokv('s:last_downloadcommand', s:last_downloadcommand)
+    endif
+    if exists('s:getofflawdat')
+      call AL_echokv('s:getofflawdat', s:getofflawdat)
+    endif
+  endfunction
+
+  function! ChaliceEnsureLogin()
+    call s:EnsureLogin()
+  endfunction
+
+  function! ChaliceForceLogin()
+    call s:EnsureLogin('force')
+  endfunction
+
+  function! ChaliceGetOfflaw(host, board, dat)
+    return s:GetOfflawDat(a:host, a:board, a:dat, 'offlaw.txt')
+  endfunction
+endif
+
+function! s:GetUserAgent()
+  call s:EnsureLogin()
+  let useragent = DOLIB_get_useragent(s:sessionid)
+  if useragent.'X' !=# 'X'
+    return useragent
+  else
+    return 'Monazilla/1.00 (Chalice/'.s:version.')'
+  endif
+endfunction
+
+function! s:AddSidToChunk(chunk)
+  call s:EnsureLogin()
+  let sid = DOLIB_get_sessionid(s:sessionid)
+  if sid.'X' !=# 'X'
+    return a:chunk . '&sid='.AL_urlencode(sid)
+  else
+    return a:chunk
+  endif
+endfunction
+
+function! s:GenerateRemoteOfflaw(host, board, dat)
+  call s:EnsureLogin()
+  let sid = DOLIB_get_sessionid(s:sessionid)
+  let board = substitute(a:board, '^/', '', '')
+  let dat = substitute(a:dat, '.dat$', '', '')
+  if sid.'X' !=# 'X'
+    return '/test/offlaw.cgi/'.board.'/'.dat.'/?raw=0.0&sid='.AL_urlencode(sid)
+  else
+    return ''
+  endif
+endfunction
+
+function! s:ResetSession()
+  let s:sessionid = ''
+  let s:last_loginid = ''
+  let s:last_password = ''
+  return 0
+endfunction
+
+function! s:EnsureLogin(...)
+  let flags = a:0 > 0 ? a:1 : ''
+  if !exists('g:chalice_loginid') || g:chalice_loginid.'X' ==# 'X' || !exists('g:chalice_password') || g:chalice_password.'X' ==# 'X'
+    return s:ResetSession()
+  endif
+  " 既にログインできているかのチェック
+  if !AL_hasflag(flags, 'force') && !DOLIB_isexpired(s:sessionid) && s:last_loginid ==# g:chalice_loginid && s:last_password ==# g:chalice_password
+    return 1
+  endif
+  " ログイン実行
+  call s:Redraw('force')
+  call AL_echo(s:msg_wait_login, 'WarningMsg')
+  let s:sessionid = DOLIB_login(g:chalice_loginid, g:chalice_password, 'Chalice/'.s:version, 'curlpath='.s:cmd_curl)
+  if s:sessionid.'X' !=# 'X'
+    let s:last_loginid = g:chalice_loginid
+    let s:last_password = g:chalice_password
+    return 1
+  else
+    return 0
+  endif
+endfunction
+
+function! s:GetOfflawDat(host, board, dat, local)
+  if s:debug
+    let s:getofflawdat = 'host='.a:host .' board='.a:board .' dat='.a:dat .' local='.a:local
+  endif
+  let remote = s:GenerateRemoteOfflaw(a:host, a:board, a:dat)
+  if remote.'X' ==# 'X'
+    " Can't login
+    return 0
+  endif
+  " Download file
+  let result = s:HttpDownload(a:host, remote, a:local, '')
+  if !filereadable(a:local)
+    return 0
+  endif
+  call AL_execute('1vsplit ++enc= '.a:local)
+  let result = getline(1)
+  normal! gg"_dd
+  silent! write!
+  silent! bwipeout!
+  if result =~# '^+OK'
+    return 1
+  else
+    call delete(a:local)
+    return 0
+  endif
+endfunction
+
+"}}}
+
+"------------------------------------------------------------------------------
+" COMMAND REGISTER {{{
 " コマンド登録ルーチン
 "   動的に登録可能なコマンドは動的に登録する
 "
@@ -3512,7 +4160,7 @@ function! s:CommandRegister()
   command! ChaliceHandleJumpExt		call <SID>HandleJump('external')
   command! ChaliceReloadBoardList	call <SID>UpdateBoardList(1)
   command! -nargs=1 ChaliceReloadThreadList	call <SID>UpdateBoard('', '', '', <q-args>)
-  command! ChaliceReloadThread		call <SID>UpdateThread('', '', '', '', 'force')
+  command! ChaliceReloadThread		call <SID>UpdateThread('', '', '', '', 'ignorecache,force')
   command! ChaliceReloadThreadInc	call <SID>UpdateThread('', '', '', '', 'continue,force')
   command! ChaliceDoWrite		call <SID>DoWriteBuffer('')
   command! -nargs=? ChaliceWrite	call <SID>OpenWriteBuffer(<f-args>)
@@ -3532,7 +4180,10 @@ function! s:CommandRegister()
   command! -nargs=* ChaliceShowNum	call <SID>ShowNumberOfArticle(<q-args>)
   command! -nargs=* ChaliceCheckThread	call <SID>CheckThreadUpdate(<q-args>)
   command! -nargs=* Chalice2HTML	call <SID>ShowWithHtml(<f-args>)
-  command! ChaliceAdjWinsize		call <SID>AdjustWindowSize(15,10)
+  command! ChaliceAdjWinsize		call <SID>AdjustWindowSizeDefault()
+  if s:debug || !s:datdir_enabled == 0
+    command! ChaliceDatdirOn		call <SID>DatdirOn()
+  endif
   delcommand Chalice
 endfunction
 
@@ -3572,4 +4223,12 @@ function! s:CommandUnregister()
   delcommand ChaliceCheckThread
   delcommand Chalice2HTML
   delcommand ChaliceAdjWinsize
+  if exists(':ChaliceDatdirOn')
+    delcommand ChaliceDatdirOn
+  endif
 endfunction
+
+" 起動コマンドの設定
+command! Chalice			call <SID>ChaliceOpen()
+
+"}}}

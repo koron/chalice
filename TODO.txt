@@ -1,37 +1,36 @@
  vi:set ts=8 sts=4 sw=4 tw=0 et ft=memo:
- Last Change: 24-Dec-2002.
+ Last Change: 17-Apr-2003.
 
-TODO 1.7+
-    nkf/qkcのサポートを打ち切る。
+TODO 1.8+
 
-DONE 1.7+
-    HTMLからDATの再構築(暫定)
-    AAを表示するための仕組み(chalice.html.patch)取り込み
-    AL_open_url()の処理に"!"を使えるようにする。
-    nkfの有無チェックが不完全なのを修正
-    AL_hascmd()のバグ修正:!has('win32')時にcmdpathがテストされていない
-    書き忘れたbufhidden=deleteの後半を補完
+ONICE 1.8+
+
+DONE 1.8+
 
 TODO 2.0 (*は一部完了、もしくは作業中)
+    (全体)      bbsid変数の導入(host/board/datの統合)
+    (全体)      UTF-8環境のサポート
+    (全体)      nkf/qkcのサポートを打ち切る。
     (全体)      構造改革(*)
     (全体)      bufhiddenをdelete以外にして構築
     (全体)      ボスが来た(!!)キーを搭載
     (全体)      一般的な関数をライブラリ化(*)
-    (全体)      dat読みができなくなる問題への対応(認証へ対応)
-    (スレ一覧)  subback.htmlを使った一覧の取得
     (スレッド)  read.cgiだけを使ったdatの取得(dat再構築)(*)
-    (スレッド)  416にはなにかある
-    (ツール)    スレの内容を.txtにして保存する仕組み、及びそのfiletype類(*)
     (書き込み)  foldingを利用した簡易表示(スレ一覧)
     (書き込み)  新規スレの作成
-    (新機能)    dat落ちへの対応→offlawを使用する
-        http://choco.2ch.net/test/offlaw.cgi/morningcoffee/1006858122/?raw=0
     (新機能)    キャッシュブラウザ
-    (新機能)    認証に対応「●Chalice」を目指す(offlawには必須)
 
 ONICE 2.0
+    (スレ一覧)  subback.htmlを使った一覧の取得
+    (スレッド)  416にはなにかある
 
 DONE 2.0
+    (スレッド)  フォーマットキャッシュ導入によるスレ表示の高速化
+    (新機能)    認証に対応「●Chalice」を目指す(offlawには必須)
+    (新機能)    dat落ちへの対応→offlawを使用する
+        http://choco.2ch.net/test/offlaw.cgi/morningcoffee/1006858122/?raw=0
+    (ツール)    スレの内容を.txtにして保存する仕組み、及びそのfiletype類(*)
+    (全体)      dat読みができなくなる問題への対応(認証へ対応)
     (スレッド)  Vimスクリプトによるdat2html
     (スレッド)  AAを表示するための仕組み
     (スレッド)  現在の板に移動する機能(板のURLをスレに表示することで対応)
@@ -48,6 +47,14 @@ DONE 2.0
     (スレの栞)  階層化folding
     (スレッド)  URLで表示レンジを指定された場合にfolding
     (スレッド)  datの増分から表示する。
+
+DONE 1.8
+    HTMLからDATの再構築(暫定)
+    AAを表示するための仕組み(chalice.html.patch)取り込み
+    AL_open_url()の処理に"!"を使えるようにする。
+    nkfの有無チェックが不完全なのを修正
+    AL_hascmd()のバグ修正:!has('win32')時にcmdpathがテストされていない
+    書き忘れたbufhidden=deleteの後半を補完
 
 ONICE 1.0
     foldingを利用した簡易表示(スレ一覧・スレ)

@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 31-Aug-2002.
+" Last Change: 17-Apr-2003.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -31,6 +31,7 @@ execute 'syntax match 2chThreadUrlWWW display "www'.g:AL_pattern_class_url.'\+"'
 syntax match 2chThreadComment display "^  \(#\|Åî\).*"
 syntax match 2chThreadQuote1 display "^  [>ÅÑ]\([>ÅÑ][>ÅÑ]\)*[^0-9>ÅÑ].*"hs=s+2
 syntax match 2chThreadQuote2 display "^  [>ÅÑ][>ÅÑ]\([>ÅÑ][>ÅÑ]\)*[^0-9>ÅÑ].*"hs=s+2
+"syntax match 2chThreadLocalAbone display "^  ÉçÅ[ÉJÉãÇ†Ç⁄Å[ÇÒ$"hs=s+2
 
 hi def link 2chThreadBrokenArticle	Error
 hi def link 2chThreadInfoLabel		Comment
@@ -52,3 +53,4 @@ hi def link 2chThreadUrlWWW		2chUnderlined
 hi def link 2chThreadComment		Comment
 hi def link 2chThreadQuote1		PreProc
 hi def link 2chThreadQuote2		Identifier
+hi def link 2chThreadLocalAbone		Error

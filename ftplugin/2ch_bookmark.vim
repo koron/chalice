@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 02-Jul-2002.
+" Last Change: 18-Feb-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -24,6 +24,7 @@ nnoremap <silent> <buffer> h		zc
 nnoremap <silent> <buffer> <CR>		:ChaliceOpenThread bookmark<CR>
 nnoremap <silent> <buffer> <2-LeftMouse>	:ChaliceOpenThread bookmark<CR>
 nnoremap <silent> <buffer> <Space>	:ChaliceCruise bookmark<CR>
+nnoremap <silent> <buffer> +		:ChaliceCruise bookmark,semiauto<CR>
 
 " 2ch_threadlist.vimで成される不要なマップを削除
 nunmap <buffer> ~

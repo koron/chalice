@@ -2,14 +2,19 @@
 "
 " datutil.vim
 "
-" Last Change: 03-Sep-2002.
+" Last Change: 04-Apr-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
-if exists('plugin_datutil_disable')
+
+let s:version_serial = 1
+let s:name = 'datutil'
+if exists('g:plugin_'.s:name.'_disable') || (exists('g:version_'.s:name) && g:version_{s:name} > s:version_serial)
   finish
 endif
-let s:debug = 1
+let g:version_{s:name} = s:version_serial
+
+let s:debug = 0
 
 "------------------------------------------------------------------------------
 " INTERFACES:
@@ -69,9 +74,7 @@ endfunction
 
 function! s:Dat2Text_loop(linestr)
   if s:dat2text_verbose && s:dat2text_count % 100 == 0
-    echohl WarningMsg
-    echo s:dat2text_count .'/'. b:datutil_last_article_num
-    echohl None
+    call AL_echo(s:dat2text_count.'/'.b:datutil_last_article_num, 'WarningMsg')
   endif
   let retval = s:FormatArticle(a:linestr, exists('b:datutil_format') ? b:datutil_format : '')
   let s:dat2text_count = s:dat2text_count + 1
@@ -153,15 +156,16 @@ function! DatLine2HTML(artnum, datline)
   let cont = substitute(cont, '\(\%(https\?\|ftp\)://'.g:AL_pattern_class_url.'\+\)', '<a href="\1">\1</a>', 'g')
 
   " HTMLとして整形
-  let retval = retval.'<dt>'.numb.'&nbsp;:&nbsp;'
+  let retval = retval.'<dt>'.numb.' ：'
   if mail != ''
     let retval = retval.'<a href="mailto:'.mail.'">'.name.'</a>'
   else
     let retval = retval.'<font color="green">'.name.'</font>'
   endif
-  let retval = retval.'&nbsp;:&nbsp;'.date
+  let retval = retval.' ：'.date
   let retval = retval.'</dt>'
   let retval = retval.'<dd>'.cont.'</dd>'
+  let retval = retval.'<br /><br />'
 
   if format ==# 'modoki'
     let retval = substitute(retval, '＠｀', ',', 'g')
@@ -238,6 +242,8 @@ function! Dat2HTML(dat, startnum, endnum, url_base, url_board)
   let retval = retval.'<font size="2"><b>&nbsp;[&nbsp;Chalice及びVimについての情報は&nbsp;<a href="http://www.kaoriya.net/" target="_blank">KaoriYa.net</a>&nbsp;]</b></font>'."\n"
   " リンク(論理位置指定)
   let retval = retval.'<hr /><center>'."\n"
+  let range = startnum . ((endnum - startnum) > 0 ? '-'.endnum : '')
+  let retval = retval.'<a href="'.range.'n">コピペ用URL</a>'."\n"
   let retval = retval.'<a href="'.(endnum+1).'-">続きを見る</a>'."\n"
   let retval = retval.'<a href="'.artnum.'-">新着レスの表示</a>'."\n"
   let retval = retval.'</center>'."\n"

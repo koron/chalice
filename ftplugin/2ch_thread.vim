@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 15-Sep-2002.
+" Last Change: 18-Feb-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -74,6 +74,7 @@ nnoremap <silent> <buffer> <C-P><C-X>	:ChalicePreviewToggle<CR>
 
 nnoremap <silent> <buffer> <2-LeftMouse>	:ChaliceHandleJump<CR>
 nnoremap <silent> <buffer> <Space>	:ChaliceCruise thread<CR>
+nnoremap <silent> <buffer> +		:ChaliceCruise thread,semiauto<CR>
 
 " 番号付きの外部ブラウザを起動する
 function! s:KickNumberedExternalBrowser(exnum)

@@ -1,4 +1,4 @@
-*chalice.txt*	www.2ch.net browser.  Last Change: 24-Dec-2002.
+*chalice.txt*	www.2ch.net browser.  Last Change: 17-Apr-2003.
 
 
 		Chalice 取扱説明書    by MURAOKA Taro (KoRoN)
@@ -11,8 +11,8 @@
 3. 操作法				|chalice-usage|
 4. カスタマイズ				|chalice-customization|
 5. Tips					|chalice-tips|
-6. FAQ					|chalice-faq|
-7. 問題点				|chalice-problem|
+6. 問題点				|chalice-problem|
+7. FAQ					|chalice-faq|
 8. クレジットその他			|chalice-credits|
 
 {Vi does not have any of this}
@@ -48,7 +48,7 @@ Vim上で
 >
 	:Chalice
 <
-とタイプするとChaliceが起動します。(詳しくは|chalice-install|参照)
+とタイプするとChaliceが起動します。(詳しくはChalice付属のREADME_j.txt参照)
 
 	□テスト鯖 (1) |
 	□おすすめ (2) |
@@ -293,6 +293,8 @@ r			現在のスレを更新(差分更新のため高速:推奨)
 
 <Space>			ページ送り + 巡回
 
++			ページ送り + 半自動巡回
+
 
 スレの栞					*chalice-usage-bookmark*
 --------
@@ -304,6 +306,8 @@ h,l			カテゴリfoldを閉じる(h)・開く(l)
 <CR>			カテゴリfold開閉・閲覧するスレの決定
 
 <Space>			巡回(次のスレの更新チェック)
+
++			強制巡回(更新のあるスレまで)
 
 スレの栞は通常のテキストファイルと同様に編集可能です。カテゴリを作成するには先
 頭が"■"で始まる行を書き、カテゴリ名とします。インデントの深さによりカテゴリを
@@ -342,7 +346,7 @@ zr			全fold展開
 zm			全fold閉鎖
 
 ==============================================================================
-カスタマイズ					*chalice-customization*
+4. カスタマイズ					*chalice-customization*
 
 Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 す。このセクションではオプションの解説と設定例を紹介します。
@@ -371,6 +375,16 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	Chalice起動時の'columns'を設定する。-1を指定すると無効になる。 >
 		let chalice_columns = 160
 <	(解説)Chalice起動時に'columns'を160に設定する。
+
++ chalice_boardlist_columns	number (省略値 15)
+	Chalice 起動時に板一覧のウィンドウの幅を設定する。
+		let chalice_boardlist_columns = 40
+	(解説)Chalice起動時に板一覧のウィンドウの幅を40に設定する。
+
++ chalice_threadlist_lines	number (省略値 10)
+	Chalice 起動時にスレ一覧のウィンドウの高さを設定する。
+		let chalice_threadlist_lines = 15
+	(解説)Chalice起動時にスレ一覧のウィンドウの高さを15に設定する。
 
 - chalice_bookmark	string (省略値 "")
 	栞(ブックマーク)ファイルを指定する。指定しなかった場合はChaliceにより
@@ -482,6 +496,10 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	    bookmark	起動時にスレの栞を開く
 	    offline	オフラインモードで起動する
 	    nohelp	自動ヘルプインストール機能を使用しない
+            novercheck  起動時にバージョンチェックを行なわない
+	    aa		起動時のAAの動作を設定する(以下から1つを選択)
+              aa=no		AA自体を表示しない
+	      aa=noanime	アニメーションはしない
 
 - chalice_preview	number (省略値 1)
 	自動プレビューを利用するためのフラグ。 >
@@ -524,7 +542,62 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	Chalice実行時にVimのタイトルバーに表示される文字列を変更する。お仕事中
 	に利用していて、タスクバーに「2ちゃんねる」の文字が踊っているのが心苦
 	しいユーザさん向け機能。
-	
+
++ chalice_ngwords	string (省略値 "")
+	玄人向け機能。目障りな記事を「ローカルあぼーん」(擬似削除)するための正
+	規表現パターンを指定します。生DATに対して、指定したパターンで正規表現
+	検索を行い、マッチした行(1つの記事)を無害な内容に置き換えます。"\<NL>"
+	で区切ることで複数のパターンを指定することも可能ですが、沢山指定すれば
+	当然スレを表示するまでの時間が長くかかるようになってしまいます。 >
+		let chalice_ngwords = '^山崎渉'
+<	(解説)山崎渉の名前で書き込まれた記事を「ローカルあぼーん」する。 >
+		let chalice_ngwords = '^山崎渉' ."\<NL>". '^IP記録実験'
+<	(解説)複数のパターン指定の例。
+
++ chalice_localabone	string (省略値 "")
+	さらに玄人向け機能。chalice_ngwordsが適用された際に、擬似削除に使用す
+	るラベル。「,」で区切り名前欄とメール欄、そしてテキストを指定する。そ
+	れぞれ「,」「<」「>」を含むテキストは使用できない。フォーマットが不正
+	な場合には"Chalice,aboned,ローカルあぼーん"が使用される。 >
+		let chalice_localabone = ',,'
+<	(解説) 名前欄、メール欄、テキストを空にする。
+
++ chalice_loginid	string (省略値 "")
++ chalice_password	string (省略値 "")
+	2ch認証のIDとパスワード。両方を設定することで、2chにアクセスする際に認
+	証を行なうようになる。認証が正しく行なわれると書き込み制限が緩和された
+	り、DAT落ちしたスレへアクセスできるようになる。認証するには「●」を購
+	入する必要がある。「●」購入については以下のURLを参照のこと。
+		http://2ch.tora3.net/
+	使用例: >
+		let chalice_loginid = 'chalice@kaoriya.net'
+		let chalice_password = 'password_phrase'
+<	(解説)IDとパスワードを指定して認証を行なう
+
++ chalice_formatedcache_expire
+			number (省略値 14)
+	フォーマットキャッシュの有効日数。Chaliceではスレを表示するのにキャッ
+	シュを用いて高速化しています。一定の期間使用されなかったキャッシュは起
+	動時に自動的に消されるようになっています。その期間を日数で指定します。
+	短くすることでディスクの使用量を減らすことができます。 >
+		let chalice_formatedcache_expire = 7
+<	(解説)キャッシュの有効期間を1週間とする
+
++ chalice_readoptions	string (省略値 "")
+	読み込み時の動作に関する設定を行なうオプション。 >
+		let chalice_readoptions = "noenc"
+<	(解説)指定できるオプションと解説は以下のとおり:
+	    noenc	Chaliceでは接続ホストに応じて予めエンコーディングを指
+			定してデータを読み込むことで、読み込み速度を上げようと
+			している。しかし、これを無効にして実際のデータのエン
+			コーディングを自動判別して読み込む。
+
++ chalice_cruise_endmark
+			string (省略値 "終了")
+	巡回はこの変数で指定した名前のカテゴリを見つけると停止します。 >
+		let chalice_cruise_endmark = '巡回終了'
+<	(解説)巡回終了というカテゴリのところで巡回が停止します。
+
 
 カスタマイズ例					*chalice-custom-example*
 --------------
@@ -548,7 +621,7 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 <
 
 ==============================================================================
-Tips						*chalice-tips*
+5. Tips						*chalice-tips*
 
 
 裏とは言えない技				*chalice-urawaza*
@@ -564,6 +637,8 @@ Tips						*chalice-tips*
 
 - :ChaliceJumplistでジャンプの履歴を参照可
 
+- スレの先頭で&を押すと、スレ全体をHTML化してブラウズ。例: gg&
+
 
 ヒント						*chalice-hints*
 ------
@@ -578,7 +653,7 @@ Tips						*chalice-tips*
 
     
 ==============================================================================
-問題点						*chalice-problem*
+6. 問題点					*chalice-problem*
 
 
 解決する意思はある	(上にあるものほど優先順位が高いかも)
@@ -602,7 +677,7 @@ Tips						*chalice-tips*
 
 
 ==============================================================================
-FAQ						*chalice-faq*
+7. FAQ						*chalice-faq*
 
 2ちゃんねるのChaliceスレッドなどで出た疑問とその回答をまとめてあります。質問の
 カキコをする前に、一通り目を通してください。
@@ -611,7 +686,8 @@ Q. カキコウィンドウで<C-CR>したのにカキコされていません!
 A. こういう場合、Chaliceは特にエラーメッセージを出さないので注意が必要です。
    1. <C-CR>キーの使えない環境ではありませんか?
       UN*Xの端末上などでは<C-CR>が使えない場合があります。<C-C><CR>で代用でき
-      ます。
+      ます。それでもダメな場合は :ChaliceDoWrite コマンドを実行してみてくださ
+      い。
    2. オフラインモードではありませんか?
       <C-X>でオンラインに切替え、rでスレをリロードしてみてください。
    3. Chaliceでは初めてカキコしたサーバではありませんか?
@@ -628,6 +704,10 @@ A. こういう場合、Chaliceは特にエラーメッセージを出さないので注意が必要です。
 	    http://curl.sourceforge.net/
 	- Windows用 cURL (香り屋配布版)
 	    http://www.kaoriya.net/#ARCHIVE_CURL
+   6. PCの時計が狂っていませんか?
+      サーバに比べてPCの時計が進みすぎている場合にも書き込めない場合がありま
+      す。可能な限りPCの時計は正確に合わせるようにしましょう。その際ntpを利用
+      した時刻合わせソフトを使うと便利です。
 
 Q. 板一覧・スレ一覧の表示がおかしい!
 A. Vimのファイル形式(filetype)検出機能は有効になっていますか?
@@ -683,7 +763,7 @@ A. MacOS Xでは香り屋で配布している最新のバイナリを利用することで解消されます。
 	http://www.kaoriya.net/#VIM6OSXJ
    非香り屋版ではVim.app/Contents/Info.plistのCFBundleDevelopmentRegionを
    Japaneseに変えることで対応できます。
-	(ソース http://pc.2ch.net/test/read.cgi/mac/1005573506/67n)
+	(ソース http://pc.2ch.net/mac/kako/1005/10055/1005573506.html #67)
    UNIXの場合は、localeを確かめてみて下さい。ウィンドマネージャが日本語に対応
    していない場合もあります。
 
@@ -691,27 +771,34 @@ Q. mキーでマークできないのは不便です!
 A. :kで代用できます。
    大概の機能には代替手段があるので、まずはvimのヘルプを見るようにしましょう。
 
+Q. UNIXで利用したいのですが板一覧やスレ一覧が激しく文字化けします。
+A. 最低限日本語が使えるようにインストールされたVimが必須です。
+   コンパイルオプションや、iconvの有無を確認し、CP932の日本語ファイルを問題な
+   く編集できるよう設定されたVimでなければ、Chaliceの正しい動作は期待できませ
+   ん。日本語を扱う上では'encoding', 'fileencodings' 等のオプションは特に重要
+   です。
+
 Q. 上のどの症例にも当てはまらない誤動作をします。
 A. あなたがしたvimの設定のどれかと、Chaliceとの相性が悪いのかもしれません。
    設定を全て無効化(起動オプション"-u NONE -U NONE"、もしくは[._]\?g\?vimrcを
    リネーム)して動作チェックしてみてください。原因を切り分けた上で動作報告を頂
    けると、対応もしやすいです。
 
-Q. Chaliceスレで出回っているパッチ(例：1.4.001)ってどうやって使うんですか?
+Q. Chaliceスレで出回っているパッチ(例：1.8.001)ってどうやって使うんですか?
 A. 一般的には、コマンドライン上から、Chaliceを解凍したディレクトリで >
-	$ patch -p0 < 1.4.001
+	$ patch -p0 < 1.8.001
 <  と入力すれば適用されます。
-   '1.4.001'は、公式リリースバージョン1.4に対して発行された1番目のパッチを意味
+   '1.8.001'は、公式リリースバージョン1.8に対して発行された1番目のパッチを意味
    します。必ず、001から順番に当てるようにしてください。また実験的な要素もパッ
    チとしてリリースされることがあるので、あらかじめご了承ください。
    patchというプログラムがインストールされていなかったり、これを読んでもさっ
    ぱり理解できなかったりするようなら、無理に使おうとせず公式リリースを待った
    方が無難でしょう。
-   NOTE: パッチを全自動で適用する機能を付ける計画も進行中です。
+   NOTE: cvs版を利用すると楽でしょう。
 
 Q. 是非追加して欲しい機能があるのですが!
 A. 2ch上のChaliceスレで提案してみると良いでしょう。
-   URLなどは|Chalice-contact|を参照してください。ただし「機能過多にはしない」
+   URLなどは|chalice-contact|を参照してください。ただし「機能過多にはしない」
    という開発方針があるので、必ずしも実現されるわけではありません。しかしトラ
    イしてみる価値はあるでしょう。
 
@@ -720,7 +807,7 @@ A. 現在作業中だからです。しばらくお待ちください。
    項目は随時募集中です。
 
 ==============================================================================
-クレジットその他				*chalice-credits*
+8. クレジットその他				*chalice-credits*
 
 以下は  README_j.txt  からの抜粋です。 最新の情報については  Chalice  に付属の
 README_j.txtを参照してください。
@@ -728,7 +815,6 @@ README_j.txtを参照してください。
 |chalice-licence|		使用許諾・免責
 |chalice-contact|		質問・連絡先
 |chalice-acknowledgement|	謝辞
-|chalice-history|		更新履歴
 |chalice-about|			後記
 
 
@@ -756,11 +842,12 @@ Vimを使って2chを見たいという欲求が強い人しか使ってはいけません。というより使わ
 	koron@tka.att.ne.jp
 
 - 2ch/ソフトウェア板/【2ch閲覧】Chalice for Vim
-	Vol.2  http://pc.2ch.net/test/read.cgi/software/1021773436/l50
-	Vol.1  http://pc.2ch.net/test/read.cgi/software/1006852780/l50
+	Vol.3  http://pc2.2ch.net/test/read.cgi/software/1046263908/l50
+	Vol.2  http://pc2.2ch.net/test/read.cgi/software/1021773436/l50
+	Vol.1  http://pc.2ch.net/software/kako/1006/10068/1006852780.html
 
-- 2ch/Unix板/Vim6 Part3
-	http://pc.2ch.net/test/read.cgi/unix/1019011083/l50
+- 2ch/Unix板/Vim6 Part5
+	http://pc.2ch.net/test/read.cgi/unix/1045365370/l50
 
 
 謝辞						*chalice-acknowledgement*
