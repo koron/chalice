@@ -1,4 +1,4 @@
-*chalice.txt*	www.2ch.net browser.  Last Change: 06-Oct-2004.
+*chalice.txt*	www.2ch.net browser.  Last Change: 17-Dec-2004.
 
 
 		Chalice 取扱説明書    by MURAOKA Taro (KoRoN)
@@ -544,6 +544,8 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	書き込み時の動作を設定するフラグ。
 	以下の値のうち1つ、または複数をカンマで区切って指定可能:
 	    amp		&を&amp;に置換
+	    keepemptylines
+			文頭・文末の空行を自動削除しない
 	    log		書き込み内容をログファイル(write.log)に記録
 	    nbsp2	半角空白を&nbsp;に置換
 	    retab	書き込み前に本文に対してretabを実行する

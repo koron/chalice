@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 16-Dec-2004.
+" Last Change: 17-Dec-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -3272,23 +3272,24 @@ function! s:DoWriteBufferStub(flag)
     return 0
   endif
 
-  " 本文先頭の空白行を削除
-  normal! 5G
-  while line('.') > 4
-    if getline('.') !~ '^\s*$'
-      break
-    endif
-    normal! "_dd
-  endwhile
-
-  " 本文末尾の空白行を削除
-  normal! G
-  while line('.') > 4
-    if getline('.') !~ '^\s*$'
-      break
-    endif
-    normal! "_dd
-  endwhile
+  if !AL_hasflag(writeoptions, 'keepemptylines')
+    " 本文先頭と末尾の空白行を削除
+    normal! 5G
+    while line('.') > 4
+      if getline('.') !~ '^\s*$'
+	break
+      endif
+      normal! "_dd
+    endwhile
+    " 末尾
+    normal! G
+    while line('.') > 4
+      if getline('.') !~ '^\s*$'
+	break
+      endif
+      normal! "_dd
+    endwhile
+  endif
 
   " 本文があるかをチェック
   if line('$') < 5
