@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 12-Jan-2002.
+" Last Change: 09-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -45,7 +45,7 @@ function! s:FoldText()
   let entry = 0
   let line = v:foldstart
   while line <= v:foldend
-    if getline(line) !~ '^\(\s*\)¡'
+    if getline(line) !~ '^\(\s*\)' . Chalice_foldmark(0)
       let entry = entry + 1
     endif
     let line = line + 1
@@ -53,10 +53,10 @@ function! s:FoldText()
 
   let topline = getline(v:foldstart)
   let entry = ' (' . entry . ') '
-  if topline !~ '^\s*¡'
-    return substitute(topline, '\s\S.*$', ' y–³–¼ƒJƒeƒSƒŠz' . entry, '')
+  if topline !~ '^\s*' . Chalice_foldmark(0)
+    return substitute(topline, '\s\S.*$', Chalice_foldmark(1) . 'y–³–¼ƒJƒeƒSƒŠz' . entry, '')
   else
-    return substitute(topline, '^\(\s*\)¡', '\1 ', '') . entry
+    return substitute(topline, '^\(\s*\)' . Chalice_foldmark(0), '\1' . Chalice_foldmark(1), '') . entry
   endif
 endfunction
 
@@ -65,7 +65,7 @@ function! s:FoldLevel(lnum)
   let mx = '^\(\s*\)\(\S\).*'
   let level = strlen(substitute(line, mx, '\1', ''))
   let foldmark = substitute(line, mx, '\2', '')
-  if foldmark ==# '¡'
+  if foldmark ==# Chalice_foldmark(0)
     return '>' . (level + 1)
   else
     return level

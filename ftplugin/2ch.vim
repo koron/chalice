@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 26-Nov-2001.
+" Last Change: 13-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 setlocal buftype=nofile bufhidden=delete 
@@ -22,6 +22,7 @@ nnoremap <silent> <buffer> u		:ChaliceGoThreadList<CR>
 nnoremap <silent> <buffer> m		:ChaliceGoThread<CR>
 nnoremap <silent> <buffer> U		:ChaliceBookmarkToggle threadlist<CR>
 nnoremap <silent> <buffer> M		:ChaliceBookmarkToggle thread<CR>
+nnoremap <silent> <buffer> <C-X>	:ChaliceToggleNetlineStatus<CR>
 
 nnoremap <silent> <buffer> <C-N>	:ChaliceHandleURL <C-R>+<CR>
 

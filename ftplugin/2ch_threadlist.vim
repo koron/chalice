@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 12-Jan-2002.
+" Last Change: 17-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -31,7 +31,9 @@ nnoremap <silent> <buffer> <C-Tab>	:ChaliceGoThread<CR>
 
 nnoremap <silent> <buffer> <CR>		:ChaliceOpenThread<CR>
 nnoremap <silent> <buffer> <S-CR>	:ChaliceOpenThread external<CR>
+nnoremap <silent> <buffer> -<CR>	:ChaliceOpenThread external<CR>
 nnoremap <silent> <buffer> <C-CR>	:ChaliceOpenThread firstline<CR>
+nnoremap <silent> <buffer> <C-C><CR>	:ChaliceOpenThread firstline<CR>
 nnoremap <silent> <buffer> R		:ChaliceReloadThreadList<CR>
 nnoremap <silent> <buffer> d		:ChaliceDeleteThreadDat<CR>
 nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd threadlist<CR>
@@ -47,3 +49,23 @@ nnoremap <buffer> <C-f>			<C-f>0
 nnoremap <buffer> <C-b>			<C-b>0
 
 setlocal foldmethod=manual
+
+" 番号付きの外部ブラウザを起動する
+function! s:KickNumberedExternalBrowser(exnum)
+  let save_exbrowser = g:chalice_exbrowser
+  if exists('g:chalice_exbrowser_' . a:exnum)
+    let g:chalice_exbrowser = g:chalice_exbrowser_{a:exnum}
+  endif
+  ChaliceOpenThread external
+  let g:chalice_exbrowser = save_exbrowser
+endfunction
+
+" 番号付きの外部ブラウザを起動するキーマップを登録する
+let i = 0
+while i < 10
+  if exists('g:chalice_exbrowser_' . i)
+    execute "nnoremap <silent> <buffer> ".i."<S-CR> :call <SID>KickNumberedExternalBrowser(" . i . ")\<CR>"
+    execute "nnoremap <silent> <buffer> ".i."-<CR> :call <SID>KickNumberedExternalBrowser(" . i . ")\<CR>"
+  endif
+  let i = i + 1
+endwhile

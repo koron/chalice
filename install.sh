@@ -1,4 +1,5 @@
 #!/bin/sh
+# Last Change: 20-Apr-2002.
 
 # Seach vim install directory
 if [ -d "/usr/local/share/vim" ] ; then
@@ -14,8 +15,4 @@ echo "Install directory: $instdir"
 mkdir -p $instdir
 
 # Copy files of chalice to install directory
-cp -R ftplugin plugin syntax $instdir
-
-# Change permission
-#chmod 755 $instdir $instdir/ftplugin $instdir/plugin $instdir/syntax
-#chmod 644 $instdir/*/*.vim
+cp -R doc ftplugin plugin syntax $instdir

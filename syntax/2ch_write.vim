@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 22-Jan-2002.
+" Last Change: 17-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -15,9 +15,10 @@ syntax match 2chWriteMail "^Mail:\s*.*"
 syntax match 2chWriteSeparator "^--------"
 syntax match 2chWriteRef display ">>\d\+\(-\d\+\)\?"
 " URLPAT
-syntax match 2chWriteUrl display "\(h\?ttp\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
+syntax match 2chWriteUrl display "\(h\?ttps\?\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
 syntax match 2chWriteComment display "^[#Åî].*"
-syntax match 2chWriteQuote display "^[>ÅÑ][^>ÅÑ].*"
+syntax match 2chThreadQuote1 display "^[>ÅÑ]\([>ÅÑ][>ÅÑ]\)*[^0-9>ÅÑ].*"
+syntax match 2chThreadQuote2 display "^[>ÅÑ][>ÅÑ]\([>ÅÑ][>ÅÑ]\)*[^0-9>ÅÑ].*"
 
 hi def link 2chWriteTitle		Title
 hi def link 2chWriteFrom		Constant
@@ -26,4 +27,5 @@ hi def link 2chWriteSeparator		NonText
 hi def link 2chWriteRef			2chUnderlined
 hi def link 2chWriteUrl			2chUnderlined
 hi def link 2chWriteComment		Comment
-hi def link 2chWriteQuote		PreProc
+hi def link 2chWriteQuote1		PreProc
+hi def link 2chWriteQuote2		Identifier

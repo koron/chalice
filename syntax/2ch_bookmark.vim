@@ -2,15 +2,15 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 22-Jan-2002.
+" Last Change: 13-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
 
 runtime! syntax/2ch.vim
 
-syntax match 2chBookmarkCategory display "^\s*Å°.*"
+execute 'syntax match 2chBookmarkCategory display "^\s*' . Chalice_foldmark(0) . '.*"'
 " URLPAT
-syntax match 2chBookmarkUrl display "\(http\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
+syntax match 2chBookmarkUrl display "\(https\?\|ftp\)://[-!#%&+,./0-9:;=?@A-Za-z_~]\+"
 hi def link 2chBookmarkCategory		Title
 hi def link 2chBookmarkUrl		2chUnderlined

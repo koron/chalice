@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 19-Dec-2001.
+" Last Change: 17-Apr-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -37,6 +37,7 @@ nnoremap <silent> <buffer> <C-Tab>	:ChaliceGoBoardList<CR>
 
 nnoremap <silent> <buffer> <CR>		:ChaliceHandleJump<CR>
 nnoremap <silent> <buffer> <S-CR>	:ChaliceHandleJumpExt<CR>
+nnoremap <silent> <buffer> -<CR>	:ChaliceHandleJumpExt<CR>
 nnoremap <silent> <buffer> R		:ChaliceReloadThread<CR>
 nnoremap <silent> <buffer> r		:ChaliceReloadThreadInc<CR>
 nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd thread<CR>
@@ -59,3 +60,23 @@ nnoremap <silent> <buffer> K		<C-y>
 nnoremap <silent> <buffer> J		<C-e>
 
 nnoremap <buffer> <2-LeftMouse>		:ChaliceHandleJump<CR>
+
+" 番号付きの外部ブラウザを起動する
+function! s:KickNumberedExternalBrowser(exnum)
+  let save_exbrowser = g:chalice_exbrowser
+  if exists('g:chalice_exbrowser_' . a:exnum)
+    let g:chalice_exbrowser = g:chalice_exbrowser_{a:exnum}
+  endif
+  ChaliceHandleJumpExt
+  let g:chalice_exbrowser = save_exbrowser
+endfunction
+
+" 番号付きの外部ブラウザを起動するキーマップを登録する
+let i = 0
+while i < 10
+  if exists('g:chalice_exbrowser_' . i)
+    execute "nnoremap <silent> <buffer> ".i."<S-CR> :call <SID>KickNumberedExternalBrowser(" . i . ")\<CR>"
+    execute "nnoremap <silent> <buffer> ".i."-<CR> :call <SID>KickNumberedExternalBrowser(" . i . ")\<CR>"
+  endif
+  let i = i + 1
+endwhile
