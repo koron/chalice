@@ -2,10 +2,10 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 11-Feb-2004.
+" Last Change: 08-Nov-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
-let s:version_serial = 133
+let s:version_serial = 134
 let s:name = 'alice'
 if exists('g:plugin_'.s:name.'_disable') || (exists('g:version_'.s:name) && g:version_{s:name} > s:version_serial)
   finish
@@ -640,14 +640,21 @@ endfunction
 function! AL_write(...)
   " Write current buffer to a file without backup.
   let filename = a:0 > 0 ? a:1 : ''
+  let append = a:0 > 1 ? a:2 : 0
   let save_backup = &backup
-  set nobackup
+  let save_buftype = &buftype
+  set nobackup buftype=
   if filename.'X' == 'X'
     call AL_execute('write!')
   else
-    call AL_execute('write! '.escape(filename, ' '))
+    if append != 0
+      call AL_execute('write! >> '.escape(filename, ' '))
+    else
+      call AL_execute('write! '.escape(filename, ' '))
+    endif
   endif
   let &backup = save_backup
+  let &buftype = save_buftype
   return 1
 endfunction
 

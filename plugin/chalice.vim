@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 31-Oct-2004.
+" Last Change: 08-Nov-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -1703,7 +1703,7 @@ function! s:HelpInstall(scriptdir)
   if !filereadable(helpfile) || (filereadable(helporig) && getftime(helporig) > getftime(helpfile))
     silent execute "sview " . helporig
     set fileencoding=japan fileformat=unix
-    silent execute "write! " . helpfile
+    call AL_write(helpfile)
     silent! bwipeout!
   endif
 
@@ -2904,7 +2904,7 @@ function! s:CloseBookmark()
     call rename(g:chalice_bookmark, backupname)
   endif
   " ブックマークファイルを保存
-  call AL_execute("%write! " . g:chalice_bookmark)
+  call AL_write(g:chalice_bookmark)
   let save_undolevels = &undolevels
   set undolevels=-1
   call AL_buffer_clear()
@@ -4259,13 +4259,13 @@ function! s:Convert_JBBSHTML2DAT(datfile, htmlfile, continued, enc)
   if getline(1) !~ '^$'
     if a:continued
       silent %s/\s*\(<br>\)\+$/<>/
-      call AL_execute('write! >> '.a:datfile)
+      call AL_write(a:datfile, 1)
     else
       silent 1s/\s*\(<br>\)\+$/\='<>'.title/
       if line('$') > 1
 	silent 2,$s/\s*\(<br>\)\+$/<>/
       endif
-      call AL_execute('write! '.a:datfile)
+      call AL_write(a:datfile)
     endif
   endif
   silent! bwipeout!
@@ -4417,7 +4417,7 @@ function! s:GetOfflawDat(host, board, dat, local)
   call AL_execute('1vsplit ++enc= '.a:local)
   let result = getline(1)
   normal! gg"_dd
-  silent! write!
+  call AL_write()
   silent! bwipeout!
   if result =~# '^+OK'
     return 1
