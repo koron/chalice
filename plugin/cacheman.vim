@@ -2,7 +2,7 @@
 "
 " cacheman.vim - Cache directory manager
 "
-" Last Change: 13-Feb-2003.
+" Last Change: 02-Aug-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 " Require: alice.vim
@@ -102,8 +102,8 @@ function! s:IsDaydir(daydir)
     return -1
   endif
   let year  = AL_sscan(a:daydir, s:mx_daydir, '\1')
-  let month = AL_sscan(a:daydir, s:mx_daydir, '\2')
-  let day   = AL_sscan(a:daydir, s:mx_daydir, '\3')
+  let month = substitute(AL_sscan(a:daydir, s:mx_daydir, '\2'), '^0', '', '')
+  let day   = substitute(AL_sscan(a:daydir, s:mx_daydir, '\3'), '^0', '', '')
   let epoch = AL_epochtime(year, month, day)
   if epoch < 0 || epoch > localtime()
     return -1

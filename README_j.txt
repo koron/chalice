@@ -2,7 +2,7 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
                                                             Since: 16-Nov-2001
                                                                   Version: 1.8
                                                  Author: MURAOKA Taoro (KoRoN)
-                                                     Last Change: 17-Apr-2003.
+                                                     Last Change: 21-May-2003.
 
 概要
   Vim上で2ちゃんねるの掲示板を閲覧するためのプラグインです。Vimさえ動くのであ
@@ -84,8 +84,8 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   (qkcの入手)
     UNIXのiconvではコード変換に対応しきれず文字化けすることがあります。それを
     回避するために、文字コード変換外部プログラムとしてqkcかnkfが必要となりま
-    す。特に変換精度の良さからqkcを推奨します。下記のサイトよりソースをダウン
-    ロードしてインストールしてください。
+    す。特に「２ちゃんねる」との相性の良さからqkcを推奨します。下記のサイトよ
+    りソースをダウンロードしてインストールしてください。
 
     - qkcのサイト(ソース)
       http://hp.vector.co.jp/authors/VA000501/index.html

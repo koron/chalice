@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 18-Feb-2003.
+" Last Change: 11-Oct-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -20,7 +20,6 @@ runtime! ftplugin/2ch.vim
 "
 setlocal fileformat=unix
 setlocal foldcolumn=1
-setlocal iskeyword=-,!,#,$,%,&,*,+,,,.,/,48-57,:,;,=,?,>,@-@,a-z,A-Z,_,~ " URLPAT
 setlocal tabstop=8
 setlocal wrap
 let b:title = ''
@@ -38,6 +37,7 @@ nnoremap <silent> <buffer> <C-Tab>	:ChaliceGoBoardList<CR>
 nnoremap <silent> <buffer> <CR>		:ChaliceHandleJump<CR>
 nnoremap <silent> <buffer> <S-CR>	:ChaliceHandleJumpExt<CR>
 nnoremap <silent> <buffer> -<CR>	:ChaliceHandleJumpExt<CR>
+nnoremap <silent> <buffer> =		:ChaliceReformat thread<CR>
 nnoremap <silent> <buffer> R		:ChaliceReloadThread<CR>
 nnoremap <silent> <buffer> r		:ChaliceReloadThreadInc<CR>
 nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd thread<CR>
@@ -54,14 +54,14 @@ nnoremap <silent> <buffer> i		:ChaliceWrite<CR>
 nnoremap <silent> <buffer> I		:ChaliceWrite sage<CR>
 nnoremap <silent> <buffer> a		:ChaliceWrite anony<CR>
 nnoremap <silent> <buffer> A		:ChaliceWrite anony,sage<CR>
-nnoremap <silent> <buffer> o		:ChaliceWrite<CR>
-nnoremap <silent> <buffer> O		:ChaliceWrite sage<CR>
+nnoremap <silent> <buffer> o		:ChaliceWrite last<CR>
+nnoremap <silent> <buffer> O		:ChaliceWrite last,sage<CR>
 nnoremap <silent> <buffer> -i		:ChaliceWrite quote<CR>
 nnoremap <silent> <buffer> -I		:ChaliceWrite sage,quote<CR>
 nnoremap <silent> <buffer> -a		:ChaliceWrite anony,quote<CR>
 nnoremap <silent> <buffer> -A		:ChaliceWrite anony,sage,quote<CR>
-nnoremap <silent> <buffer> -o		:ChaliceWrite quote<CR>
-nnoremap <silent> <buffer> -O		:ChaliceWrite sage,quote<CR>
+nnoremap <silent> <buffer> -o		:ChaliceWrite last,quote<CR>
+nnoremap <silent> <buffer> -O		:ChaliceWrite last,sage,quote<CR>
 
 nnoremap <silent> <buffer> p		<C-b>
 nnoremap <silent> <buffer> K		<C-y>

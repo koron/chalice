@@ -2,12 +2,12 @@
 "
 " dolib.vim - Authentication library for 2channel
 "
-" Last Change: 24-Jan-2003.
+" Last Change: 24-May-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 " Require: alice.vim
 
-let s:version_serial = 1
+let s:version_serial = 2
 let s:name = 'dolib'
 if exists('g:plugin_'.s:name.'_disable') || (exists('g:version_'.s:name) && g:version_{s:name} > s:version_serial)
   finish
@@ -20,7 +20,7 @@ let g:version_{s:name} = s:version_serial
 let s:debug = 0
 let s:curlpath = ''
 let s:mininumlife = 3600
-let s:loginurl = 'https://tiger2.he.net/~tora3n2c/futen.cgi'
+let s:loginurl = 'https://2chv.tora3.net/futen.cgi'
 let s:mx_result = '^SESSION-ID=\(\([^:]*\):.*\)$'
 
 "------------------------------------------------------------------------------

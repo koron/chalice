@@ -2,15 +2,18 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 05-Apr-2003.
+" Last Change: 11-Feb-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
-let s:version_serial = 122
+let s:version_serial = 133
 let s:name = 'alice'
 if exists('g:plugin_'.s:name.'_disable') || (exists('g:version_'.s:name) && g:version_{s:name} > s:version_serial)
   finish
 endif
 let g:version_{s:name} = s:version_serial
+
+" Get script directory
+let s:scriptdir = expand('<sfile>:p:h')
 
 "------------------------------------------------------------------------------
 " ALICE
@@ -128,6 +131,31 @@ endfunction
 
 let g:AL_pattern_class_url = '[-!#$%&*+,./0-9:;=?@A-Za-z_~]'
 
+function! s:AL_open_url_win32(url)
+  let url = substitute(a:url, '%', '%25', 'g')
+  if url =~# ' '
+    let url = substitute(url, ' ', '%20', 'g')
+    let url = substitute(url, '^file://', 'file:/', '')
+  endif
+  " If 'url' has % or #, all of those characters are expanded to buffer name
+  " by execute().  Below escape() suppress this.  system() does not expand
+  " those characters.
+  let url = escape(url, '%#')
+  " Start system related URL browser
+  if !has('win95') && url !~ '[&!]'
+    " for Win NT/2K/XP
+    call AL_execute('!start /min cmd /c start ' . url)
+    " MEMO: "cmd" causes some side effects.  Some strings like "%CD%" is
+    " expanded (may be environment variable?) by cmd.
+  else
+    " It is known this rundll32 method has a problem when opening URL that
+    " matches http://*.html.  It is better to use ShellExecute() API for
+    " this purpose, open some URL.  Command "cmd" and "start" on NT/2K?XP
+    " does this.
+    call AL_execute("!start rundll32 url.dll,FileProtocolHandler " . url)
+  endif
+endfunction
+
 function! AL_open_url(url, cmd)
   " Open given URL by external browser
   "   For Windows, if cmd is empty, system related URL browser is used.  For
@@ -157,34 +185,25 @@ function! AL_open_url(url, cmd)
     endif
     let retval = 1
   elseif has('win32')
-    let url = AL_urldecode(url)
-    " You can get minshell.exe at http://www.kaoriya.net/testdir/
-    let minshell = AL_hascmd('minshell')
-    if minshell.'X' !=# 'X'
-      call AL_system(minshell.' '.url)
+    " You can build minshell.exe or minshell.dll where tools/minshell
+    " directory with VisualC.  If you want to get compiled binary, please
+    " send a e-mail to author of this script.
+    if filereadable(s:scriptdir.'/minshell.dll')
+      " Open with minshell.dll
+      call libcall(s:scriptdir.'/minshell.dll', 'ExecuteOpen', url)
     else
-      let url = substitute(url, '%', '%25', 'g')
-      if url =~# ' '
-	let url = substitute(url, ' ', '%20', 'g')
-	let url = substitute(url, '^file://', 'file:/', '')
-      endif
-      " If 'url' has % or #, all of those characters are expanded to buffer
-      " name by execute().  Below escape() suppress this.  system() does not
-      " expand those characters.
-      let url = escape(url, '%#')
-      " Start system related URL browser
-      if !has('win95') && url !~ '[&!]'
-	" for Win NT/2K/XP
-	call AL_execute('!start /min cmd /c start ' . url)
-	" MEMO: "cmd" causes some side effects.
-	" Some strings like "%CD%" is expanded (may be environment variable?)
-	" by cmd.
+      let url = AL_urldecode(url)
+      " Search minshell.exe
+      if filereadable(s:scriptdir.'/minshell.exe')
+	let minshell_exe = s:scriptdir.'/minshell.exe'
       else
-	" It is known this rundll32 method has a problem when opening URL that
-	" matches http://*.html.  It is better to use ShellExecute() API for
-	" this purpose, open some URL.  Command "cmd" and "start" on NT/2K?XP
-	" does this.
-	call AL_execute("!start rundll32 url.dll,FileProtocolHandler " . url)
+	let minshell_exe = AL_hascmd('minshell')
+      endif
+      " Open with minshell.exe or old win32 function.
+      if minshell_exe.'X' !=# 'X'
+	call AL_system(minshell_exe.' '.url)
+      else
+	call s:AL_open_url_win32(url)
       endif
     endif
     let retval = 1
@@ -197,11 +216,14 @@ function! AL_open_url(url, cmd)
 endfunction
 
 function! AL_urlencoder_ch2hex(ch)
-  let hex = AL_nr2hex(char2nr(a:ch))
-  if strlen(hex) % 2 == 1
-    let hex = '0' . hex
-  endif
-  return substitute(hex, '\(..\)', '%\1', 'g')
+  let result = ''
+  let i = 0
+  while i < strlen(a:ch)
+    let hex = AL_nr2hex(char2nr(a:ch[i]))
+    let result = result.'%'.(strlen(hex) < 2 ? '0' : '').hex
+    let i = i + 1
+  endwhile
+  return result
 endfunction
 
 function! s:AL_verifyurl(str)
@@ -226,13 +248,20 @@ function! AL_urldecode(str)
   return retval
 endfunction
 
+function! s:Utf_nr2byte(nr)
+  if a:nr < 0x80
+    return nr2char(a:nr)
+  elseif a:nr < 0x800
+    return nr2char(a:nr/64+192).nr2char(a:nr%64+128)
+  else
+    return nr2char(a:nr/4096%16+224).nr2char(a:nr/64%64+128).nr2char(a:nr%64+128)
+  endif
+endfunction
+
 function! s:Uni_nr2enc_char(charcode)
-  let char = nr2char(a:charcode)
+  let char = s:Utf_nr2byte(a:charcode)
   if has('iconv') && strlen(char) > 1
-    let char = iconv(char, 'ucs-2le', &encoding)
-    if char !~ '^\p\+$'
-      let char = '?'
-    endif
+    let char = strtrans(iconv(char, 'utf-8', &encoding))
   endif
   return char
 endfunction
@@ -244,6 +273,7 @@ function! AL_decode_entityreference_with_range(range)
   call AL_execute(a:range . 's/&quot;/"/g')
   call AL_execute(a:range . "s/&apos;/'/g")
   call AL_execute(a:range . 's/&nbsp;/ /g')
+  call AL_execute(a:range . 's/&yen;/\&#65509;/g')
   call AL_execute(a:range . 's/&#\(\d\+\);/\=s:Uni_nr2enc_char(submatch(1))/g')
   call AL_execute(a:range . 's/&amp;/\&/g')
 endfunction
@@ -256,6 +286,7 @@ function! AL_decode_entityreference(str)
   let str = substitute(str, '&quot;', '"', 'g')
   let str = substitute(str, '&apos;', "'", 'g')
   let str = substitute(str, '&nbsp;', ' ', 'g')
+  let str = substitute(str, '&yen;', '\&#65509;', 'g')
   let str = substitute(str, '&#\(\d\+\);', '\=s:Uni_nr2enc_char(submatch(1))', 'g')
   let str = substitute(str, '&amp;', '\&', 'g')
   return str
@@ -372,6 +403,44 @@ function! AL_string_multiplication(base, scalar)
     let base = base . base
   endwhile
   return retval
+endfunction
+
+" matchstr() for around the cursor
+function! AL_matchstr_cursor(mx)
+  let str = AL_matchstr_undercursor(a:mx)
+  if str.'X' != 'X'
+    return str
+  endif
+  let str = AL_matchstr_aftercursor(a:mx)
+  if str.'X' != 'X'
+    return str
+  endif
+  let str = AL_matchstr_beforecursor(a:mx)
+  if str.'X' != 'X'
+    return str
+  endif
+  return ''
+endfunction
+
+" matchstr() for before the cursor
+function! AL_matchstr_beforecursor(mx)
+  let column = col('.')
+  let mx = "\\m^.*\\(".a:mx."\\)\\%<".(column + 1).'c.*$'
+  return AL_sscan(getline('.'), mx, '\1')
+endfunction
+
+" matchstr() for after the cursor
+function! AL_matchstr_aftercursor(mx)
+  let column = col('.')
+  let mx = '\m\%>'.column.'c'.a:mx
+  return matchstr(getline('.'), mx)
+endfunction
+
+" matchstr() for under the cursor
+function! AL_matchstr_undercursor(mx)
+  let column = col('.')
+  let mx = '\m\%<'.(column + 1).'c'.a:mx.'\%>'.column.'c'
+  return matchstr(getline('.'), mx)
 endfunction
 
 "}}}
@@ -516,6 +585,23 @@ endfunction
 
 "------------------------------------------------------------------------------
 " MULTILINE STRING FUNCTIONS {{{
+
+function! AL_append_multilines(contents)
+  let name = 'a'
+  let value = getreg(name)
+  let type = getregtype(name)
+  call setreg(name, a:contents, "c")
+  execute 'normal! "'.name.'p'
+  call setreg(name, value, type)
+endfunction
+
+function! AL_addline(multistr, str)
+  if a:multistr.'X' == 'X'
+    return a:str
+  else
+    return a:multistr . "\<NL>" . a:str
+  endif
+endfunction
 
 function! AL_getline(multistr, linenum)
   if a:linenum == 0

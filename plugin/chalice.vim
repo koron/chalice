@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 17-Apr-2003.
+" Last Change: 07-Oct-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -26,7 +26,7 @@ if !exists('*AL_version')
   runtime! plugin/alice.vim
 endif
 " cacheman.vim‚Ìƒ[ƒh‚ğŠmÀ‚È‚à‚Ì‚É‚·‚é
-if !exists('g:versoin_cacheman')
+if !exists('g:version_cacheman')
   runtime! plugin/cacheman.vim
 endif
 " datutil.vim‚Ìƒ[ƒh‚ğŠmÀ‚È‚à‚Ì‚É‚·‚é
@@ -34,7 +34,7 @@ if !exists('*Dat2Text')
   runtime! plugin/datutil.vim
 endif
 " dolib.vim‚Ìƒ[ƒh‚ğŠmÀ‚È‚à‚Ì‚É‚·‚é
-if !exists('g:versoin_dolib')
+if !exists('g:version_dolib')
   runtime! plugin/dolib.vim
 endif
 
@@ -129,6 +129,11 @@ if !exists('g:chalice_curl_options')
   let g:chalice_curl_options= ''
 endif
 
+" ‘‚«‚İ‚É“Áê‚Èİ’è‚ğ‚µ‚½‚¢ê‡
+if !exists('g:chalice_curl_writeoptions')
+  let g:chalice_curl_writeoptions= ''
+endif
+
 " Cookieg‚¤?
 if !exists('g:chalice_curl_cookies')
   let g:chalice_curl_cookies = 1
@@ -189,7 +194,7 @@ if !exists('g:chalice_preview')
   let g:chalice_preview = 1
 endif
 
-" “®ì‚ÌŠeíİ’è(1, above, autoclose)
+" “®ì‚ÌŠeíİ’è(1, above, autoclose, stay)
 if !exists('g:chalice_previewflags')
   let g:chalice_previewflags = ''
 endif
@@ -311,6 +316,7 @@ let s:msg_error_writecookie = 'Cookie‚ğÄ‚«‚Ü‚µ‚½. “à—e‚ğŠm”F‚µ‚ÄÄ“x‘‚«‚İ’¼‚
 let s:msg_error_writeerror = '‘‚«‚İƒGƒ‰[‚Å‚·.'
 let s:msg_error_writefalse = '‘‚«‚ß‚½‚æ‚¤‚Å‚·‚ª’ˆÓ‚ª‚ ‚è‚Ü‚·.'
 let s:msg_error_writecheck = '‘‚«‚ß‚½‚æ‚¤‚Å‚·‚ªŒx‚ª‚ ‚è‚Ü‚·.'
+let s:msg_error_writehighload = 'ƒT[ƒo‰ß•‰‰×‚Ì‚½‚ß‘‚«‚İ‚Å‚«‚Ü‚¹‚ñ.'
 let s:msg_error_writenottrue = '•s–¾‚È‘‚«‚İƒGƒ‰[‚Å‚·.'
 let s:msg_error_addnoboardlist = '”Âˆê——‚©‚çx‚Ö“o˜^o—ˆ‚Ü‚¹‚ñ.'
 let s:msg_error_addnothread = '‚Ü‚¾ƒXƒŒ‚ğŠJ‚¢‚Ä‚¢‚È‚¢‚Ì‚Å“o˜^o—ˆ‚Ü‚¹‚ñ.'
@@ -335,7 +341,7 @@ let s:msg_chalice_start = 'Chalice ƒLƒm[ƒ“'
 " 1sƒwƒ‹ƒv
 let s:msg_help_boardlist = '(”Âˆê——)  <CR>:”ÂŒˆ’è  j/k:”Â‘I‘ğ  h/l:ƒJƒeƒSƒŠ•Â/ŠJ  R:XV'
 let s:msg_help_threadlist = '(ƒXƒŒˆê——)  <CR>:ƒXƒŒŒˆ’è j/k:ƒXƒŒ‘I‘ğ  d:datíœ  R:XV'
-let s:msg_help_thread = '(ƒXƒŒƒbƒh)  i:‘  I:sage‘  a:“½–¼‘  A:“½–¼sage  r:XV'
+let s:msg_help_thread = '(ƒXƒŒƒbƒh)  i:‘  I:sage‘  a:“½–¼‘  A:“½–¼sage  r:XV =:®Œ`'
 let s:msg_help_bookmark = '(ƒXƒŒ‚Ìx)  <CR>:URLŒˆ’è  h/l:•Â/ŠJ <C-A>:•Â‚¶‚é  [•ÒW‰Â”\]'
 let s:msg_help_write = '(‘‚«‚İ)  <C-CR>:‘‚«‚İÀs  <C-W>c:•Â‚¶‚é  [•ÒW‰Â”\]'
 let s:msg_help_rewrite = '‘‚«‚İ‚É¸”s‚µ‚½‚Æv‚í‚ê‚é•¶Í‚ğ•œ‹A‚µ‚Ü‚µ‚½.'
@@ -396,33 +402,54 @@ let s:cmd_conv = ''
 let s:cmd_gzip = ''
 
 " MATCH PATTERNS
-let s:mx_thread_dat = '^[ !\*+x] \(.\+\) (\%(\%(\d\+\|???\)/\)\?\(\d\+\)).*\t\+\(\d\+\%(_\d\+\)\?\.\%(dat\|cgi\)\)'
+let s:mx_thread_dat = '^[ !\*+x] \(.*\) (\%(\%(\d\+\|???\)/\)\?\(\d\+\)).*\t\+\(\d\+\%(_\d\+\)\?\.\%(dat\|cgi\)\)'
 let s:mx_anchor_num = '>>\(\(\d\+\)\%(-\(\d\+\)\)\?\)'
 let s:mx_anchor_url = '\(\(h\?ttps\?\|ftp\)://'.g:AL_pattern_class_url.'\+\)'
 let s:mx_anchor_www = 'www'.g:AL_pattern_class_url.'\+'
+let s:mx_anchor_from = 'From:\s*\([1-9]\d\{,2}\)'
 let s:mx_url_parse = 'http://\([^/]\+\)\%(/\([^?#]\+\)\)\?\%(?\([^#]\+\)\)\?\%(#\(.\+\)\)\?'
 let s:mx_url_2channel = 'http://\(..\{-\}\)/test/read.cgi\(/[^/]\+\)/\(\d\+\%(_\d\+\)\?\)\(.*\)'
 let s:mx_servers_oldkako = '^\(piza\.\|www\.bbspink\|mentai\.2ch\.net/mukashi\|www\.2ch\.net/\%(tako\|kitanet\)\)'
-let s:mx_servers_jbbstype = '\%(^jbbs\.shitaraba\.com\|machibbs\.com$\|jbbs\.net\)'
+let s:mx_servers_jbbstype = '\%(^jbbs\.shitaraba\.com\|\.\%(machibbs.com$\|machi\.to$\|jbbs\.net\)\)'
+
 let s:mx_servers_shitaraba = '^www\.shitaraba\.com$'
-let s:mx_servers_machibbs = 'machibbs\.com$'
+let s:mx_servers_machibbs = '\.\%(machibbs\.com\|machi\.to\)$'
 let s:mx_servers_euc = '\%(jbbs\.net\|shitaraba\.com\)'
+let s:mx_html2dat_jbbs = '\m^<dt>\d\+\s*–¼‘OF\%(<a href="mailto:\([^"]*\)">\)\?\(.\{-\}\)\%(</a>\)\?\s*“Še“úF\s*\(.*\)\s*<br>\s*<dd>'
+let s:mx_html2dat_2ch = '\m^<dt>\d\+\s*F\%(<a href="mailto:\([^"]*\)">\)\?\(.\{-\}\)\%(</a>\)\?\s*F\s*\(.*\)\s*<dd>'
 
 "}}}
 
 "------------------------------------------------------------------------------
 " AUTO COMMANDS {{{
 " ƒI[ƒgƒRƒ}ƒ“ƒh‚Ìİ’è
-augroup Chalice
-autocmd!
-execute "autocmd BufDelete " . s:buftitle_write . " call <SID>DoWriteBuffer('closing')"
-execute "autocmd BufEnter " . s:buftitle_boardlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_boardlist)|normal! 0"
-execute "autocmd BufEnter " . s:buftitle_threadlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:opened_bookmark?s:msg_help_bookmark : s:msg_help_threadlist)"
-execute "autocmd BufEnter " . s:buftitle_thread . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_thread)"
-execute "autocmd BufDelete " . s:buftitle_threadlist . " if s:opened_bookmark|call s:CloseBookmark()|endif"
-execute "autocmd CursorHold " . s:buftitle_thread . " call s:OpenPreview_autocmd()"
-execute "autocmd CursorHold " . s:buftitle_preview . " call s:OpenPreview_autocmd()"
-augroup END
+
+let s:autocmd_installed = 0
+
+function! s:AutocmdInstall()
+  if s:autocmd_installed != 0
+    return
+  else
+    let s:autocmd_installed = 1
+  endif
+  augroup Chalice
+    autocmd!
+    execute "autocmd BufDelete " . s:buftitle_write . " call <SID>DoWriteBuffer('closing')"
+    execute "autocmd BufEnter " . s:buftitle_boardlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_boardlist)|normal! 0"
+    execute "autocmd BufEnter " . s:buftitle_threadlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:opened_bookmark?s:msg_help_bookmark : s:msg_help_threadlist)"
+    execute "autocmd BufEnter " . s:buftitle_thread . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_thread)"
+    execute "autocmd BufDelete " . s:buftitle_threadlist . " if s:opened_bookmark|call s:CloseBookmark()|endif"
+    execute "autocmd CursorHold " . s:buftitle_thread . " call s:OpenPreview_autocmd()"
+    execute "autocmd CursorHold " . s:buftitle_preview . " call s:OpenPreview_autocmd()"
+  augroup END
+endfunction
+
+function! s:AutocmdUninstall()
+  let s:autocmd_installed = 0
+  augroup Chalice
+    autocmd!
+  augroup END
+endfunction
 
 "}}}
 
@@ -612,6 +639,12 @@ function! s:NextLine()
   endif
 endfunction
 
+function! s:ViewCursorLine()
+  if foldclosed(line('.')) > 0
+    normal! zv
+  endif
+endfunction
+
 "
 " „‰ñ‚Á‚Û‚¢‚±‚Æ‚ğ‚·‚é
 "
@@ -620,17 +653,16 @@ function! s:Cruise(flags)
     " ƒXƒŒƒbƒh‚Å‚Ì„‰ñ
     if AL_islastline() && s:opened_bookmark
       call s:GoBuf_ThreadList()
+      call s:ViewCursorLine()
       call s:NextLine()
       call s:Cruise(AL_delflag(AL_addflag(a:flags, 'bookmark'), 'thread'))
     else
       call AL_execute("normal! \<C-F>")
     endif
   elseif AL_hasflag(a:flags, 'bookmark')
-    while 1
+    while s:opened_bookmark
       " ƒuƒbƒNƒ}[ƒN‚Å‚Ì„‰ñ
-      if foldclosed(line('.')) > 0
-	normal! zv
-      endif
+      call s:ViewCursorLine()
       let curline = getline('.')
       if !s:ParseURL(matchstr(curline, s:mx_anchor_url))
 	if exists('g:chalice_cruise_endmark') && g:chalice_cruise_endmark.'X' !=# 'X' && curline =~# '\m^\s*'.Chalice_foldmark(0).'\s*'.g:chalice_cruise_endmark.'$'
@@ -792,6 +824,9 @@ endfunction
 "
 " URL‚ğChalice‚ÅŠJ‚­
 "
+" Flags:
+"   external		‹­§“I‚ÉŠO•”ƒuƒ‰ƒEƒU‚ğg—p‚·‚é
+"   noboardcheck	”Âˆê——ƒ`ƒFƒbƒN‚ğs‚È‚í‚È‚¢
 function! s:HandleURL(url, flag)
   " ’Êí‚ÌURL‚¾‚Á‚½ê‡A–³ğŒ‚ÅŠO•”ƒuƒ‰ƒEƒU‚É“n‚µ‚Ä‚¢‚éBURL‚ÌŒ`‚ğ‚İ‚Ä2ch
   " ‚È‚ç‚Î“à•”‚ÅŠJ‚­B
@@ -807,7 +842,7 @@ function! s:HandleURL(url, flag)
     " ”Â‚ÌURL‚©‚Ç‚¤‚©‚ğ”Âˆê——‚ğ—˜—p‚µ‚Ä”»’f‚µA”Â‚È‚ç‚Î‚»‚ê‚ğŠJ‚­
     let oldbuf = bufname('%')
     call s:GoBuf_BoardList()
-    let nr = search('\V'.escape(a:url, "\\"), 'w')
+    let nr = AL_hasflag(a:flag, 'noboardcheck') ? 0 : search('\V'.escape(a:url, "\\"), 'w')
     if nr != 0
       normal! zO0z.
       execute maparg("<CR>")
@@ -829,48 +864,116 @@ function! s:HandleURL(url, flag)
       call s:ClosePreview()
     endif
 
-    " w’è‚ÌURL‚ğƒXƒŒƒbƒh‚Æ‚µ‚ÄŠJ‚­
-    "	s:parseurl_host, s:parseurl_board, s:parseurl_dat‚Í
-    "	ParseURL()“à‚Åİ’è‚³‚ê‚éˆÃ–Ù“I‚È–ß‚è’lB
-    let curarticle = s:UpdateThread('', s:parseurl_host, s:parseurl_board, s:parseurl_dat, 'continue')
-
-    if s:parseurl_range_mode =~ 'r'
-      if s:parseurl_range_mode !~ 'l'
-	" ”ñƒŠƒXƒgƒ‚[ƒh
-	" •\¦”ÍˆÍŒã‚Ìfolding
-	if s:parseurl_range_end != '$'
-	  let fold_start = s:GetLnum_Article(s:parseurl_range_end + 1)  - 1
-	  if 0 < fold_start
-	    call AL_execute(fold_start . ',$fold')
-	  endif
-	endif
-	" •\¦”ÍˆÍ‘O‚Ìfolding
-	if s:parseurl_range_start > 1
-	  let fold_start = s:GetLnum_Article(s:parseurl_range_mode =~ 'n' ? 1 : 2) - 1
-	  let fold_end = s:GetLnum_Article(s:parseurl_range_start) - 2
-	  if 0 < fold_start && fold_start < fold_end
-	    call AL_execute(fold_start . ',' . fold_end . 'fold')
-	  endif
-	endif
-	call s:GoThread_Article(s:parseurl_range_start)
-      else
-	" ƒŠƒXƒgƒ‚[ƒh('l')
-	let fold_start = s:GetLnum_Article(s:parseurl_range_mode =~ 'n' ? 1 : 2) - 1
-	let fold_end = s:GetLnum_Article(s:GetThreadLastNumber() - s:parseurl_range_start + (s:parseurl_range_mode =~ 'n' ? 1 : 2)) - 2
-	if 0 < fold_start && fold_start < fold_end
-	  call AL_execute(fold_start . ',' . fold_end . 'fold')
-	endif
-	if !s:GoThread_Article(curarticle)
-	  normal! Gzb
-	endif
-      endif
+    " s:parseurl_host, s:parseurl_board, s:parseurl_dat,
+    " s:parseurl_range_start, s:parseurl_range_end, s:parseurl_range_mode,
+    " ‚ÍParseURL()“à‚Åİ’è‚³‚ê‚éˆÃ–Ù“I‚È–ß‚è’lB
+    if AL_hasflag(a:flag, 'firstarticle')
+      call s:OpenThreadOnlyone(s:parseurl_host, s:parseurl_board, s:parseurl_dat)
+    else
+      call s:OpenThreadNormal(s:parseurl_host, s:parseurl_board, s:parseurl_dat, s:parseurl_range_start, s:parseurl_range_end, s:parseurl_range_mode)
     endif
 
+    " ƒqƒXƒgƒŠ‚É’Ç‰Á(•›ì—p:ƒXƒŒƒoƒbƒtƒ@‚ÖˆÚ“®)
     if !AL_hasflag(a:flag, '\cnoaddhist')
       call s:AddHistoryJump(s:ScreenLine(), line('.'))
     endif
   endif
   return 1
+endfunction
+
+" w’è‚ÌƒXƒŒƒbƒh‚Ì1‚¾‚¯‚ğŠJ‚­
+"
+" Referenced: HandleURL()
+function! s:OpenThreadOnlyone(host, board, dat)
+  let mx = '\m^http://\([^/]\+\)/\(.\+\)$'
+  let url = s:GenerateThreadURL(a:host, a:board, a:dat, 'onlyone')
+  let tmpfile = tempname()
+  let result = s:HttpDownload(AL_sscan(url, mx, '\1'), AL_sscan(url, mx, '\2'), tmpfile, 'noagent')
+  if result == 200
+    " 1‚ğ®Œ`
+    call s:GoBuf_Thread()
+    let save_undolevels = &undolevels
+    set undolevels=-1
+    call AL_buffer_clear()
+    call AL_execute('read ++enc='.s:GetHostEncoding(a:host)." ".tmpfile)
+    silent! 1 delete _
+    " ƒ^ƒCƒgƒ‹‚Ìæ“¾
+    let mx = '<title>\(.*\)<\/title>'
+    if search(mx, 'W') > 0
+      let title = AL_sscan(getline('.'), mx, '\1')
+    else
+      let title = 'NOTITLE'
+    endif
+    " ‹L–ˆÈŠO‚Ì“à—e‚ğíœ
+    silent! %substitute/<\/\?dl>/\r/g
+    silent! global!/^<dt>1/ delete _
+    " HTML‚ğDAT‚É•ÏŠ·
+    let data = substitute(getline(1), '\%(<br>\)\+$', '', 'ie')
+    if a:host =~ s:mx_servers_jbbstype
+      let data = substitute(data, s:mx_html2dat_jbbs, '\2<>\1<>\3<>', 'ie').'<>'
+    else
+      let data = substitute(data, s:mx_html2dat_2ch, '\2<>\1<>\3<>', 'ie').'<>'
+    endif
+    " DAT‚ğTXT‚É®Œ`‚µ‚Äƒoƒbƒtƒ@‚Ö“\‚è•t‚¯
+    silent! normal! 1G"_dd
+    call AL_append_multilines(substitute(DatLine2Text(1, data), "\r", "\<NL>", 'ge'))
+    silent! normal! 1G"_dd
+    " ƒXƒŒ‚Ìƒƒ^î•ñ‚ğ’Ç‰Á
+    call append(0, 'Title: '.title)
+    call append(1, 'URL: '.s:GenerateThreadURL(a:host, a:board, a:dat, 'raw'))
+    call AL_del_lastsearch()
+    " ƒXƒŒ‚É•K—v‚È•Ï”‚ğİ’è
+    let b:host	= a:host
+    let b:board	= a:board
+    let b:dat	= a:dat
+    let b:title	    = s:prefix_thread . title
+    let b:title_raw = title
+    let &undolevels = save_undolevels
+    " ƒJ[ƒ\ƒ‹‚ğURL‚ÖˆÚ“®
+    normal! 2G
+  else
+    call s:EchoH('Error', s:msg_thread_dead." ".result)
+  endif
+  call delete(tmpfile)
+endfunction
+
+" w’èƒXƒŒƒbƒh‚ğŠJ‚­
+"
+" Referenced: HandleURL()
+function! s:OpenThreadNormal(host, board, dat, rstart, rend, rmode)
+  let curarticle = s:UpdateThread('', a:host, a:board, a:dat, 'continue')
+
+  if a:rmode =~ 'r'
+    if a:rmode !~ 'l'
+      " ”ñƒŠƒXƒgƒ‚[ƒh
+      " •\¦”ÍˆÍŒã‚Ìfolding
+      if a:rend != '$'
+	let fold_start = s:GetLnum_Article(a:rend + 1)  - 1
+	if 0 < fold_start
+	  call AL_execute(fold_start . ',$fold')
+	endif
+      endif
+      " •\¦”ÍˆÍ‘O‚Ìfolding
+      if a:rstart > 1
+	let fold_start = s:GetLnum_Article(a:rmode =~ 'n' ? 1 : 2) - 1
+	let fold_end = s:GetLnum_Article(a:rstart) - 2
+	if 0 < fold_start && fold_start < fold_end
+	  call AL_execute(fold_start . ',' . fold_end . 'fold')
+	endif
+      endif
+      call s:GoThread_Article(a:rstart)
+    else
+      " ƒŠƒXƒgƒ‚[ƒh('l')
+      let fold_start = s:GetLnum_Article(a:rmode =~ 'n' ? 1 : 2) - 1
+      let fold_end = s:GetLnum_Article(s:GetThreadLastNumber() - a:rstart + (a:rmode =~ 'n' ? 1 : 2)) - 2
+      if 0 < fold_start && fold_start < fold_end
+	call AL_execute(fold_start . ',' . fold_end . 'fold')
+      endif
+      if !s:GoThread_Article(curarticle)
+	normal! Gzb
+      endif
+    endif
+  endif
 endfunction
 
 function! s:GetThreadLastNumber()
@@ -894,30 +997,14 @@ function! s:OpenURL(url)
   return retval
 endfunction
 
-function! s:GetAnchor(str)
-  let anchor = matchstr(a:str, s:mx_anchor_num)
-  if anchor != ''
-    return anchor
-  endif
-  let anchor = matchstr(a:str, s:mx_anchor_url)
-  if anchor != ''
-    return anchor
-  endif
-  let anchor = matchstr(a:str, s:mx_anchor_www)
-  if anchor != ''
-    return anchor
-  endif
-  return ''
-endfunction
-
 function! s:GetAnchorCurline()
-  " ƒJ[ƒ\ƒ‹‰º‚ÌƒŠƒ“ƒN‚ğ’T‚µo‚·B‚È‚¯‚ê‚ÎŒã•û‚ÖƒT[ƒ`
-  let context = expand('<cword>')
-  let anchor = s:GetAnchor(context)
-  if anchor == ''
-    let anchor = s:GetAnchor(strpart(getline('.'), col('.') - 1))
+  " ƒJ[ƒ\ƒ‹‰º‚ÌƒŠƒ“ƒN‚ğ’T‚µo‚·B‚È‚¯‚ê‚ÎŒã•û‘±‚¢‚Ä‘O•û‚ÖƒT[ƒ`
+  let mx = "\\%(\\%(".s:mx_anchor_num."\\)\\|\\%(".s:mx_anchor_url."\\)\\|\\%(".s:mx_anchor_www."\\)\\|\\%(".s:mx_anchor_from."\\)\\)"
+  let str = AL_matchstr_cursor(mx)
+  if str =~ s:mx_anchor_from
+    let str = '>>'.AL_sscan(str, s:mx_anchor_from, '\1')
   endif
-  return anchor
+  return str
 endfunction
 
 "
@@ -969,10 +1056,54 @@ function! s:UpdateThreadInfo(host, board, dat)
     if b:host . b:board ==# a:host . a:board
       if a:dat != '' && search(a:dat, 'w')
 	call s:FormatThreadInfoWithoutUndo(line('.'), line('.'), 'numcheck')
+	call s:WriteFormatedCache_Subject(b:host, b:board)
       endif
     endif
     call s:GoBuf_Thread()
   endif
+endfunction
+
+function! s:DatDownload_2ch(host, remote, local_dat, flags)
+  if 1 && has('byte_offset') && AL_hasflag(a:flags, 'continue') && getfsize(a:local_dat) > 0
+    " DAT‚ÌÅŒã‚Ì1s‚ª”í‚é‚æ‚¤‚Éƒ_ƒEƒ“ƒ[ƒh‚·‚é‚½‚ß‚ÉA³Šm‚ÈƒAƒhƒŒƒX‚ğ‘ª’è
+    call AL_execute('1vsplit ++enc= '.a:local_dat)
+    let continue_at = line2byte('$') - 1
+    let lastline = line('$')
+    silent! bwipeout!
+    " ‰¼ƒ_ƒEƒ“ƒ[ƒhÀs
+    let tmpfile = tempname()
+    let retval = s:HttpDownload2(s:GenerateHostPathUri(a:host, a:remote), tmpfile, continue_at)
+    " ƒ_ƒEƒ“ƒ[ƒh‚ÌŒ‹‰Ê‚ğŒŸØ
+    if retval == 206
+      " ÅŒã‚Ì1s‚ª³‚µ‚­”í‚Á‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN‚·‚é
+      "	  ”í‚Á‚Ä‚¢‚é¨DATXV
+      "	  ”í‚Á‚Ä‚È‚¢¨ƒtƒ@ƒCƒ‹‚ğÁ‚µ‚Ä‘Sæ“¾‚Ö
+      call AL_execute('1vsplit ++enc= '.a:local_dat)
+      call AL_execute('$read ++enc= '.tmpfile)
+      call delete(tmpfile)
+      if getline(lastline) ==# getline(lastline + 1)
+	if line('$') > lastline + 1
+	  call AL_execute(lastline." delete _")
+	  silent! call AL_write();
+	endif
+	silent! bwipeout!
+	return retval
+      else
+	call AL_execute(lastline." delete _")
+	" DAT‚É‚ ‚Ú[‚ñ‚ª¶‚¶‚½‚Æ„‘ª
+	silent! bwipeout!
+	call delete(a:local_dat)
+      endif
+    elseif retval == 416
+      " DAT‚É‚ ‚Ú[‚ñ‚ª¶‚¶‚Ä’Z‚­‚È‚Á‚½‚Æ„‘ª
+      call delete(a:local_dat)
+    endif
+    " ‰¼ƒ_ƒEƒ“ƒ[ƒh‚Ég‚Á‚½ƒtƒ@ƒCƒ‹‚ğíœ
+    if getfsize(tmpfile) >= 0
+      call delete(tmpfile)
+    endif
+  endif
+  return s:HttpDownload(a:host, a:remote, a:local_dat, a:flags)
 endfunction
 
 function! s:DatCatchup_2ch(host, board, dat, flags)
@@ -1011,7 +1142,7 @@ function! s:DatCatchup_2ch(host, board, dat, flags)
     if didntexist
       call AL_mkdir(AL_basepath(local_dat))
     endif
-    let result = s:HttpDownload(a:host, remote, local_dat, a:flags)
+    let result = s:DatDownload_2ch(a:host, remote, local_dat, a:flags)
     if result < 300 || result == 304 || result == 416
       " è‡3
       let local = local_dat
@@ -1157,7 +1288,6 @@ function! s:UpdateThread(title, host, board, dat, flags)
     normal! Gzb
   endif
   call s:Redraw('force')
-  call s:EchoH('WarningMsg', s:msg_help_thread)
   " 'nostartofline'‘Îô
   normal! 0
   " >>1ƒvƒŒƒrƒ…[
@@ -1179,7 +1309,6 @@ function! s:UpdateBoard(title, host, board, flag)
     let b:title_raw = a:title
   else
     let b:title = s:prefix_board . b:title_raw
-  else
   endif
   if a:host != ''
     let b:host = a:host
@@ -1245,6 +1374,16 @@ function! s:UpdateBoard(title, host, board, flag)
   if !updated
     call s:Redraw('force')
     call s:EchoH('WarningMsg', s:msg_warn_oldthreadlist)
+  endif
+endfunction
+
+function! s:Reformat(target)
+  if a:target ==# 'thread'
+    let save_dont_download = s:dont_download
+    let s:dont_download = 1
+    call s:UpdateThread('', '', '', '', 'ignorecache,force')
+    let s:dont_download = save_dont_download
+  else
   endif
 endfunction
 
@@ -1351,6 +1490,7 @@ function! s:ChaliceClose(flag)
   if !s:opened
     return
   endif
+  call s:AutocmdUninstall()
   " ‘‚¯‚éƒoƒbƒtƒ@‚ ‚ê‚Î‘‚­ƒ`ƒƒƒ“ƒX‚ğ—pˆÓ‚·‚é
   if s:opened_write
     call s:DoWriteBuffer('closing,quit')
@@ -1407,8 +1547,10 @@ function! s:ChaliceClose(flag)
   endif
   let &equalalways = s:equalalways
   let &foldcolumn = s:foldcolumn
+  let &gdefault = s:gdefault
   let &ignorecase = s:ignorecase
   let &lazyredraw = s:lazyredraw
+  let &more = s:more
   let &wrapscan = s:wrapscan
   let &winwidth = s:winwidth
   let &winheight = s:winheight
@@ -1428,7 +1570,10 @@ function! s:ChaliceClose(flag)
 endfunction
 
 function! s:CharConvert()
-  if v:charconvert_from == 'cp932' && v:charconvert_to == 'euc-jp' && s:cmd_conv != ''
+  if v:charconvert_from == 'cp932' && v:charconvert_to == 'utf-8' && s:cmd_conv != ''
+    call s:DoExternalCommand(s:cmd_conv.' '.v:fname_in.'>'.v:fname_out)
+    return 0
+  elseif v:charconvert_from == 'cp932' && v:charconvert_to == 'euc-jp' && s:cmd_conv != ''
     call s:DoExternalCommand(s:cmd_conv .'<'. v:fname_in .'>'. v:fname_out)
     return 0
   else
@@ -1442,7 +1587,9 @@ if s:debug
     echo "s:cmd_curl=".s:cmd_curl
     echo "s:cmd_conv=".s:cmd_conv
     echo "s:cmd_gzip=".s:cmd_gzip
-    echo "s:dir_cache=".s:dir_cache
+    if exists('s:dir_cache')
+      echo "s:dir_cache=".s:dir_cache
+    endif
     echo "g:chalice_bookmark=".g:chalice_bookmark
   endfunction
 endif
@@ -1460,15 +1607,17 @@ function! s:CheckEnvironment()
   let s:cmd_curl = AL_hascmd('curl')
 
   " ”ñCP932ŠÂ‹«‚Å‚ÍƒRƒ“ƒo[ƒ^‚ğæ“¾‚·‚é•K—v‚ª‚ ‚éB
-  if &encoding != 'cp932'
+  if &encoding !=# 'cp932' && &encoding !=# 'utf-8'
     if AL_hascmd('qkc') != ''
       let s:cmd_conv = 'qkc -e -u'
     elseif AL_hascmd('nkf') != ''
-      let s:cmd_conv = 'nkf -e'
+      let s:cmd_conv = 'nkf -e -x'
     else
       call s:EchoH('ErrorMsg', s:msg_error_noconv)
       return 0
     endif
+  elseif &encoding == 'utf-8'
+    let s:cmd_conv = 'iconv -c -f cp932 -t utf-8'
   else
     let s:cmd_conv = ''
   endif
@@ -1494,6 +1643,8 @@ function! s:CheckEnvironment()
   if g:chalice_bookmark == ''
     let g:chalice_bookmark = g:chalice_basedir . '/' . s:bookmark_filename
   endif
+  " ‘‚«‚İƒƒOƒtƒ@ƒCƒ‹î•ñ\’z
+  let s:chalice_writelogfile = s:dir_cache . 'write.log'
 
   " ƒLƒƒƒbƒVƒ…ƒfƒBƒŒƒNƒgƒŠ‚Ì•ÛØ
   if !isdirectory(s:dir_cache)
@@ -1575,6 +1726,8 @@ function! s:ChaliceOpen()
     return
   endif
 
+  call s:AutocmdInstall()
+
   " (•K—v‚È‚ç‚Î)ƒwƒ‹ƒvƒtƒ@ƒCƒ‹‚ğƒCƒ“ƒXƒg[ƒ‹‚·‚é
   if !AL_hasflag(g:chalice_startupflags, 'nohelp')
     silent! call s:HelpInstall(s:scriptdir)
@@ -1586,8 +1739,10 @@ function! s:ChaliceOpen()
   let s:columns = &columns
   let s:equalalways = &equalalways
   let s:foldcolumn = &foldcolumn
+  let s:gdefault = &gdefault
   let s:ignorecase = &ignorecase
   let s:lazyredraw = &lazyredraw
+  let s:more = &more
   let s:wrapscan = &wrapscan
   let s:winwidth = &winwidth
   let s:winheight = &winheight
@@ -1606,8 +1761,10 @@ function! s:ChaliceOpen()
   " noequalalways‚É‚µ‚½B
   set noequalalways
   set foldcolumn=0
+  set nogdefault
   set ignorecase
   set lazyredraw
+  set nomore
   set wrapscan
   set winheight=8
   set winwidth=15
@@ -1779,6 +1936,10 @@ function! s:OpenThread(...)
   if retval == 1 && !AL_hasflag(flag, 'external')
     call s:AddHistoryJump(s:ScreenLine(), line('.'))
   endif
+  " 1‚Ì‚İ•\¦‚ÉƒXƒŒˆê——‚É—¯‚Ü‚é
+  if AL_hasflag(flag, 'firstarticle') && AL_hasflag(g:chalice_previewflags, 'stay')
+    call s:GoBuf_ThreadList()
+  endif
 endfunction
 
 "
@@ -1786,7 +1947,7 @@ endfunction
 "
 function! s:OpenBoard(...)
   let board = AL_chomp(getline('.'))
-  let mx = '^\(.\{-\}\)\s\+\(http://.*/$\)'
+  let mx = '\m^\(.\{-\}\)\s\+\(http://\S*$\)'
   if board !~ mx
     " fold‚ÌŠJ•Â‚ğƒgƒOƒ‹
     normal! 0za
@@ -1807,7 +1968,7 @@ function! s:OpenBoard(...)
       let board = substitute(path, '^bbs', '', '')
     else
       " NOTE: ‹Œd—l‘Î‰‚Ì‚½‚ß‚Ìƒ[ƒNƒAƒ‰ƒEƒ“ƒh
-      let mx = '^\(.*\)\(/[^/]*\)$'
+      let mx = '\m^\(.*\)\(/[^/]\+\)$'
       let host  = host.'/'.AL_sscan(path, mx, '\1')
       let board = AL_sscan(path, mx, '\2')
     endif
@@ -1822,7 +1983,13 @@ function! s:OpenBoard(...)
   if bufname('%') ==# s:buftitle_boardlist
     call s:HighlightWholeline(line('.'), 'DiffChange')
   endif
-  call s:UpdateBoard(title, host, board, '')
+  if board ==# '' || board ==# '/'
+    " NOTE: ”ÂˆÈŠO‚ÌURL‚ğŠJ‚­‚½‚ß‚Ìb’èƒ[ƒNƒAƒ‰ƒEƒ“ƒh‚È‚Ì‚ÅA‚à‚Á‚Æ—Ç‚¢í
+    " —ª‚É·‚µ‘Ö‚¦‚½•û‚ª—Ç‚¢B
+    call s:HandleURL(url, 'noboardcheck')
+  else
+    call s:UpdateBoard(title, host, board, '')
+  endif
   return 1
 endfunction
 
@@ -1918,10 +2085,11 @@ endfunction
 "
 function! s:GetBufferTitle()
   if !exists('b:title')
-    return bufname('%')
+    let str = bufname('%')
   else
-    return b:title
+    let str = b:title
   endif
+  return substitute(str, "[\<NL>]\\+", '', 'g')
 endfunction
 
 "
@@ -1991,6 +2159,45 @@ function! s:OpenAllChaliceBuffers()
   let b:title = s:prefix_board
 endfunction
 
+function! s:HttpDownload2(uri, filename, continueat)
+  if s:dont_download
+    return 200
+  endif
+  " ƒƒbƒZ[ƒW•\¦
+  call s:Redraw('force')
+  call s:EchoH('WarningMsg', s:msg_wait_download)
+  " ‹N“®ƒIƒvƒVƒ‡ƒ“‚Ì\’z¨cURL‚ÌÀs
+  let opts = g:chalice_curl_options
+  " ¶dat“Ç‚İ‚İ§ŒÀ‚É‘Î‰
+  let opts = opts.' -A '.AL_quote(s:GetUserAgent())
+  if a:continueat > 0
+    let opts = opts.' -C '.a:continueat
+  endif
+  let tmp_head = tempname()
+  let opts = opts.' -D '.AL_quote(tmp_head)
+  let opts = opts.' -o '.AL_quote(a:filename)
+  let opts = opts.' '.AL_quote(a:uri)
+  " ƒ_ƒEƒ“ƒ[ƒhÀs
+  let cmd = s:cmd_curl.' '.opts
+  if s:debug
+    let s:last_downloadcommand = cmd
+  endif
+  call s:DoExternalCommand(cmd)
+  " ƒwƒbƒ_[î•ñæ“¾¨ƒeƒ“ƒ|ƒ‰ƒŠƒtƒ@ƒCƒ‹íœ
+  call AL_execute('1vsplit ' . tmp_head)
+  let retval = AL_sscan(getline(1), '^HTTP\S*\s\+\(\d\+\).*$', '\1') + 0
+  silent! bwipeout!
+  call delete(tmp_head)
+  " ‰æ–ÊÄ•`‰æ¨ŠÖ”I—¹
+  call s:Redraw('force')
+  return retval
+endfunction
+
+" ƒzƒXƒg–¼‚ÆƒpƒX‚©‚çURI‚ğ¶¬‚·‚é
+function! s:GenerateHostPathUri(host, path)
+  return 'http://'.a:host.'/'.substitute(a:path, '^/\+', '', '')
+endfunction
+
 "
 " HTTPƒ_ƒEƒ“ƒ[ƒh‚ÌŠÖ”:
 "
@@ -2007,7 +2214,7 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
   call s:EchoH('WarningMsg', s:msg_wait_download)
 
   let local = a:localpath
-  let url = 'http://' . a:host . '/' . substitute(a:remotepath, '^/', '', '')
+  let url = s:GenerateHostPathUri(a:host, a:remotepath)
   let continued = 0
   let compressed = 0
 
@@ -2015,7 +2222,7 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
   let opts = g:chalice_curl_options
 
   " ¶dat“Ç‚İ‚İ§ŒÀ‚É‘Î‰
-  if s:user_agent_enable
+  if s:user_agent_enable && !AL_hasflag(a:flag, 'noagent')
     let opts = opts . ' -A ' . AL_quote(s:GetUserAgent())
   endif
 
@@ -2157,6 +2364,11 @@ function! s:UpdateBoardList(force)
     if s:fcachedir_enabled
       call AL_write(fcachedfile)
     endif
+  endif
+  " ƒ†[ƒU’è‹`‚Ì”Âˆê——‚Ì’Ç‰Á
+  let userboardlist = g:chalice_basedir.'/boardlist.txt'
+  if filereadable(userboardlist)
+    execute '0read '.userboardlist
   endif
   let &undolevels = save_undolevels
 
@@ -2382,12 +2594,18 @@ function! s:AddHistoryJump(scline, curline)
   if b:host == '' || b:board == '' || b:dat == ''
     return ''
   endif
-  let packed = b:host.' '.b:board.' '.b:dat.' '.a:scline.' '
-  if strpart(s:JumplistCurrent(), 0, strlen(packed)) !=# packed
-    call s:JumplistAdd(packed.a:curline.' '.b:title_raw)
-    return packed
+  let str1 = b:host.' '.b:board.' '.b:dat.' '.a:scline.' '
+  let str2 = str1.a:curline.' '
+  let current = s:JumplistCurrent()
+  if strpart(current, 0, strlen(str2)) !=# str2
+    if strpart(current, 0, strlen(str1)) ==# str1
+      call s:JumplistPrev()
+    endif
+    call s:JumplistAdd(str2.b:title_raw)
+    return 1
+  else
+    return 0
   endif
-  return ''
 endfunction
 
 "
@@ -2543,17 +2761,16 @@ function! s:OpenPreview2(host, board, dat, nstart, nend)
   endif
 
   " ƒvƒŒƒrƒ…[‚Ì’†g‚ğì¬‚·‚é
-  let save_reg = @"
-  let @" = s:FormatThreadPartial(local, a:nstart, a:nend, s:GetHostEncoding(a:host))
+  let contents = s:FormatThreadPartial(local, a:nstart, a:nend, s:GetHostEncoding(a:host))
   call s:GoBuf_Preview()
-  if @" == ''
-    let @" = save_reg
+  if contents.'X' == 'X'
     call s:EchoH('ErrorMsg', s:msg_error_invalidanchor)
     return 0
   else
     call AL_buffer_clear()
-    normal! G$""pgg"_2dd
-    let @" = save_reg
+    normal! G$
+    call AL_append_multilines(contents)
+    normal! gg"_2dd
     call append(0, 'Title: '.s:formatthreadpartion_title)
     return 1
   endif
@@ -2658,7 +2875,7 @@ function! s:OpenBookmark()
   set undolevels=-1
   call AL_buffer_clear()
   setlocal filetype=2ch_bookmark
-  call AL_execute("read " . g:chalice_bookmark)
+  call AL_execute("read ++enc= " . g:chalice_bookmark)
   silent! normal! gg"_dd0
   let &undolevels = save_undolevels
 
@@ -2829,27 +3046,16 @@ endfunction
 " ‘‚«‚İƒoƒbƒtƒ@ƒ‹[ƒ`ƒ“
 "
 
+" ÅŒã‚Ì‘‚«‚İ‚Åg—p‚µ‚½username‹y‚Ñusermail
+let s:last_username = ''
+let s:last_usermail = ''
+
 "
 " ‘‚«‚İ—pƒoƒbƒtƒ@‚ğŠJ‚­
 "
 function! s:OpenWriteBuffer(...)
-  " ƒtƒ‰ƒO‚É‰‚¶‚Ä“½–¼Asage‚ğ©“®İ’è
   let newthread = 0
   let quoted = ''
-  let username = g:chalice_username
-  let usermail = g:chalice_usermail
-  if a:0 > 0
-    if AL_hasflag(a:1, 'anony')
-      let username = g:chalice_anonyname
-      let usermail = ''
-    endif
-    if AL_hasflag(a:1, 'sage')
-      let usermail = 'sage'
-    endif
-    if AL_hasflag(a:1, 'new')
-      let newthread = 1
-    endif
-  endif
 
   " ƒXƒŒƒbƒhƒoƒbƒtƒ@‚©‚ç host, board, dat ‚ğæ“¾
   if !newthread
@@ -2878,10 +3084,10 @@ function! s:OpenWriteBuffer(...)
 	let quote_end = line("$")
       endif
       " •¶Í‚ğˆø—p‚µ‚½•¶š—ñ‚ğì¬(->quoted‚ÉŠi”[)
-      let quoted = '>>' . matchstr(getline(quote_start + 1), '^\(\d\+\)') . "\<CR>"
+      let quoted = '>>' . matchstr(getline(quote_start + 1), '^\(\d\+\)')
       let i = quote_start + 2
       while i <= quote_end
-	let quoted = quoted . substitute(getline(i), '^.', '>', '') . "\<CR>"
+	let quoted = AL_addline(quoted, substitute(getline(i), '^.', '>', ''))
 	let i = i + 1
       endwhile
     endif
@@ -2897,6 +3103,38 @@ function! s:OpenWriteBuffer(...)
   endif
   let host = b:host
   let bbs = substitute(b:board, '^/', '', '')
+
+  " ƒtƒ‰ƒO‚É‰‚¶‚Ä“½–¼Asage‚ğ©“®İ’è
+  if exists('g:chalice_username_'.bbs.'_'.key)
+    let username = g:chalice_username_{bbs}_{key}
+  elseif exists('g:chalice_username_'.bbs)
+    let username = g:chalice_username_{bbs}
+  else
+    let username = g:chalice_username
+  endif
+  if exists('g:chalice_usermail_'.bbs.'_'.key)
+    let usermail = g:chalice_usermail_{bbs}_{key}
+  elseif exists('g:chalice_usermail_'.bbs)
+    let usermail = g:chalice_usermail_{bbs}
+  else
+    let usermail = g:chalice_usermail
+  endif
+  if a:0 > 0
+    if AL_hasflag(a:1, 'anony')
+      let username = g:chalice_anonyname
+      let usermail = ''
+    endif
+    if AL_hasflag(a:1, 'last')
+      let username = s:last_username
+      let usermail = s:last_usermail
+    endif
+    if AL_hasflag(a:1, 'sage')
+      let usermail = 'sage'
+    endif
+    if AL_hasflag(a:1, 'new')
+      let newthread = 1
+    endif
+  endif
 
   " ƒoƒbƒtƒ@‚Ìì¬
   call s:GoBuf_Write()
@@ -2921,28 +3159,29 @@ function! s:OpenWriteBuffer(...)
   let save_undolevels = &undolevels
   set undolevels=-1
   call AL_buffer_clear()
-  let def = ''
-  let def = def . 'Title: ' . title . "\<CR>"
-  let def = def . 'From: ' . username . "\<CR>"
-  let def = def . 'Mail: ' . usermail . "\<CR>"
-  let def = def . "--------\<CR>"
-  let def = def . quoted
-  execute "normal! i" . def . "\<ESC>"
+  let def = AL_addline('', 'Title: ' . title)
+  let def = AL_addline(def, 'From: ' . username)
+  let def = AL_addline(def, 'Mail: ' . usermail)
+  let def = AL_addline(def, '--------')
+  if quoted.'X' != 'X'
+    let def = AL_addline(def, quoted)
+  endif
+  let def = AL_addline(def, '')
+  call AL_append_multilines(def)
   let s:opened_write = 1
   let &undolevels = save_undolevels
 
   " ‘‚«‚İ‚É¸”s‚µ‚½•¶Í‚ª‚ ‚ê‚Î©“®“I‚É’Ç‰ÁB
   " ‚È‚¯‚ê‚ÎƒCƒ“ƒT[ƒgƒ‚[ƒhŠJnB
   if exists('g:chalice_lastmessage') && g:chalice_lastmessage != ''
-    let save_reg = @"
-    let @" = g:chalice_lastmessage
-    normal! Gp
-    let @" = save_reg
+    normal! G$
+    call AL_append_multilines(g:chalice_lastmessage)
     call s:Redraw('force')
     call s:EchoH('WarningMsg', s:msg_help_rewrite)
   else
     call s:Redraw('force')
     call s:EchoH('WarningMsg', s:msg_help_write)
+    normal! G
     startinsert
   endif
 endfunction
@@ -2991,6 +3230,7 @@ endfunction
 " TODO: –ß‚è’l‚Íl‚¦’¼‚µ‚½‚Ù‚¤‚ª—Ç‚¢B-1‚Æ‚©•Ï‚È’l‚à•Ô‚µ‚Ä‚¢‚éB
 function! s:DoWriteBufferStub(flag)
   let force_close = AL_hasflag(a:flag, '\cclosing')
+  let writeoptions = g:chalice_writeoptions
   call s:GoBuf_Write()
   call s:Redraw('force')
   let newthread = b:newthread
@@ -3008,13 +3248,6 @@ function! s:DoWriteBufferStub(flag)
   let name = getline(2)
   let mail = getline(3)
   let sep = getline(4)
-  " ƒfƒoƒbƒO•\¦
-  if 0
-    echo 'title=' . title
-    echo 'name=' . name
-    echo 'mail=' . mail
-    echo 'sep=' . sep
-  endif
   if title !~ '^Title:\s*' || name !~ '^From:\s*' || mail !~ '^Mail:\s*' || sep != '--------'
     call s:EchoH('ErrorMsg', s:msg_error_writebufhead)
     if force_close
@@ -3068,6 +3301,11 @@ function! s:DoWriteBufferStub(flag)
     return 0
   endif
 
+  " –{•¶’†‚Ìƒ^ƒu‚ğ®—
+  if AL_hasflag(writeoptions, 'retab')
+    silent! retab!
+  endif
+
   " –{•¶‚©‚çƒƒbƒZ[ƒW‚ğæ“¾
   let message = getline(5)
   let curline = 6
@@ -3079,7 +3317,6 @@ function! s:DoWriteBufferStub(flag)
   let g:chalice_lastmessage = message
 
   " •K—v‚È•¶š‚ÍÀ‘ÌQÆ‚Ö’u‚«Š·‚¦
-  let writeoptions = g:chalice_writeoptions
   if b:host =~ s:mx_servers_shitaraba
     " ‚µ‚½‚ç‚ÎŒn‚Å‚Í&amp;‚Æ&nbsp;‚Ö‚Ì’uŠ·‚¦‚ÍƒT[ƒo‘¤‚Ås‚È‚í‚ê‚é
     let writeoptions = AL_delflag(writeoptions, 'amp')
@@ -3090,7 +3327,7 @@ function! s:DoWriteBufferStub(flag)
   if AL_hasflag(writeoptions, 'amp')
     let message = substitute(message, '&', '\&amp;', 'g')
   endif
-  " ”¼ŠpƒXƒy[ƒX2ŒÂ‚ğ‘SŠpƒXƒy[ƒX2ŒÂ‚É“WŠJ
+  " ”¼ŠpƒXƒy[ƒX2ŒÂ‚ğ‘SŠpƒXƒy[ƒX1ŒÂ‚É“WŠJ
   if AL_hasflag(writeoptions, 'zenkaku')
     let message = substitute(message, '  ', '@', 'g')
   endif
@@ -3166,6 +3403,9 @@ function! s:DoWriteBufferStub(flag)
   call s:Redraw('force')
   " ‹N“®ƒIƒvƒVƒ‡ƒ“‚Ì\’z¨cURL‚ÌÀs
   let opts = g:chalice_curl_options
+  if exists('g:chalice_curl_writeoptions') && g:chalice_curl_writeoptions.'X' != 'X'
+    let opts = g:chalice_curl_writeoptions
+  endif
   if s:user_agent_enable
     let opts = opts . ' -A ' . AL_quote(s:GetUserAgent())
   endif
@@ -3178,14 +3418,21 @@ function! s:DoWriteBufferStub(flag)
   let opts = opts . ' -e http://' . b:host . '/' . b:bbs . '/index2.html'
   let opts = opts . ' -o ' . AL_quote(resfile)
   let opts = opts . ' ' . s:GenerateWriteURL(b:host, b:bbs, b:key)
-  call s:DoExternalCommand(s:cmd_curl . ' ' . opts)
+  let thread_url = s:GenerateThreadURL(b:host, b:bbs, b:key, 'raw')
+  let exec_cmd = s:cmd_curl.' '.opts
+  call s:DoExternalCommand(exec_cmd)
+  " ‘‚«‚İ‚Ìusername‚Æusermail‚ğ•Û‘¶
+  let s:last_username = name
+  let s:last_usermail = mail
 
   " ‘‚«‚İŒ‹‰Ê(resfile)‚Ì‰ğÍ
   let retval = 1
   let show_resfile = 0
   let error_msg = ''
   call AL_execute('1vsplit '.resfile)
-  let rescode = AL_sscan(getline(1), '2ch_X:\(\w\+\)', '\1')
+  let mx = '2ch_X:\(\w\+\)'
+  let nr2ch_X = search(mx, 'w')
+  let rescode = nr2ch_X > 0 ? AL_sscan(getline(nr2ch_X), mx, '\1') : ''
   " ‘‚«‚İ‚É‚È‚ñ‚ç‚©‚Ì——R‚Å¸”s‚µ‚Ä‚¢‚½‚çreturn 0(retval = 0)‚·‚éB
   " Œ‹‰Êƒtƒ@ƒCƒ‹‚ğ•\¦‚·‚é‚©‚Ç‚¤‚©‚Íshow_resfile‚Å§Œä‚·‚éB
   " ƒGƒ‰[ƒƒbƒZ[ƒW‚ğ•\¦‚·‚é•K—v‚ª‚ ‚éê‡‚É‚Íerror_msg‚Éİ’è‚·‚éB
@@ -3203,7 +3450,12 @@ function! s:DoWriteBufferStub(flag)
     let retval = 0
     let show_resfile = 1
     let error_msg = s:msg_error_writecheck
-  elseif rescode !=# '' && rescode !=# 'true' && g:chalice_verbose > 0
+  elseif getline(2) =~ 'ƒT[ƒo.*•‰‰×.*‚'
+    " ƒT[ƒo‰ß•‰‰×‚É‚æ‚é‘‚«‚İ¸”s
+    let retval = 0
+    let show_resfile = 1
+    let error_msg = s:msg_error_writehighload
+  elseif rescode !=# 'true' && getline(1) !~ '‘‚«‚±‚İ‚Ü‚µ‚½'
     " ‘‚«‚İ¬Œ÷‚Å‚Í‚È‚¢ê‡
     let retval = 0
     let show_resfile = 1
@@ -3217,7 +3469,18 @@ function! s:DoWriteBufferStub(flag)
   endif
   silent! bwipeout!
   " ‘¶İ‚·‚éê‡‚É‚ÍƒGƒ‰[ƒƒbƒZ[ƒW‚ğ•\¦‚·‚é
-  if error_msg !=# ''
+  if error_msg.'X' ==# 'X'
+    let result = 'OK'
+  else
+    let result = 'ERROR: '.error_msg
+  endif
+
+  " ƒƒO‚ğæ‚é
+  if AL_hasflag(g:chalice_writeoptions, 'log')
+    call s:LogWriteBuffer(thread_url, exec_cmd, result)
+  endif
+
+  if result !=# 'OK'
     call s:Redraw('force')
     call s:EchoH('ErrorMsg', error_msg)
   endif
@@ -3233,6 +3496,20 @@ function! s:DoWriteBufferStub(flag)
     endif
   endif
   return retval
+endfunction
+
+function! s:LogWriteBuffer(thread_url, exec_cmd, result)
+  call s:GoBuf_Write()
+  echo ""
+  execute "redir! >> ".s:chalice_writelogfile
+  silent echon 'Time: '.strftime('%Y/%m/%d %H:%M:%S')
+  silent echo 'Result: '.a:result
+  silent echo 'Command: '.a:exec_cmd
+  silent echo 'URL: '.a:thread_url
+  silent %print
+  silent echo AL_string_multiplication('=', 78)
+  silent echo ''
+  redir END
 endfunction
 
 function! s:CreateWriteChunk(host, board, key, title, name, mail, message, ...)
@@ -3459,7 +3736,7 @@ function! s:RemoveNGWords()
       let ngw = AL_firstline(ngwords)
       let ngwords = AL_lastlines(ngwords)
       if ngw != ''
-	call AL_execute('silent! g/'.ngw."/call setline('.','".localabone."')")
+	call AL_execute('silent! 2,$g/'.ngw."/call setline('.','".localabone."')")
       endif
     endwhile
     call AL_del_lastsearch()
@@ -3544,11 +3821,9 @@ function! s:FormatThreadDiff(local, newarticle, enc)
   let contents = s:FormatThreadPartial(a:local, a:newarticle, -1, a:enc)
   " ƒXƒŒƒoƒbƒtƒ@‚Ö‘}“ü
   if AL_countlines(contents) > 0
-    let save_reg = @"
-    let @" = contents
     call s:GoBuf_Thread()
-    normal! G$""p
-    let @" = save_reg
+    normal! G$
+    call AL_append_multilines(contents)
   else
     call s:GoBuf_Thread()
     normal! G0
@@ -3750,24 +4025,39 @@ function! s:GenerateBoardURL(host, board, ...)
   endif
 endfunction
 
+" Flags:
+"   NONE	ÅV50‚ÌURL
+"   raw		ƒXƒŒƒbƒh‘S‘Ì‚ÌURL
+"   internal	ƒXƒŒƒbƒh‘S‘Ì‚ÌURL
+"   onlyone	1‚Ì‚İ‚ÌURL
 function! s:GenerateThreadURL(host, board, key, ...)
   " host, board, key, flag‚©‚çŠJ‚­‚×‚«URL‚ğ¶¬‚·‚é
   let flags = a:0 > 0 ? a:1 : ''
   let board = substitute(a:board, '^/', '', '')
   let key = substitute(a:key, '\.\(dat\|cgi\)$', '', '')
   if a:host =~ s:mx_servers_jbbstype
-    let url = 'http://'.a:host.'/bbs/read.cgi?BBS='.board.'&KEY='.key
-    if !AL_hasflag(flags, 'internal') && !AL_hasflag(flags, 'raw')
+    if a:host =~ s:mx_servers_machibbs
+      let url = 'http://'.a:host.'/bbs/read.pl?BBS='.board.'&KEY='.key
+    else
+      let url = 'http://'.a:host.'/bbs/read.cgi?BBS='.board.'&KEY='.key
+    endif
+    if AL_hasflag(flags, 'onlyone')
+      let url = url . '&START=1&END=1'
+    elseif !AL_hasflag(flags, 'internal') && !AL_hasflag(flags, 'raw')
       let url = url . '&LAST=50'
     endif
   elseif a:host =~ s:mx_servers_shitaraba
     let url = 'http://'.a:host.'/cgi-bin/read.cgi?key='.key.'&bbs='.board
-    if !AL_hasflag(flags, 'internal') && !AL_hasflag(flags, 'raw')
+    if AL_hasflag(flags, 'onlyone')
+      let url = url . '&START=1&END=1'
+    elseif !AL_hasflag(flags, 'internal') && !AL_hasflag(flags, 'raw')
       let url = url . '&ls=50'
     endif
   else
     let url = 'http://'.a:host.'/test/read.cgi/'.board.'/'.key.'/'
-    if !AL_hasflag(flags, 'internal') && !AL_hasflag(flags, 'raw')
+    if AL_hasflag(flags, 'onlyone')
+      let url = url . '1n'
+    elseif !AL_hasflag(flags, 'internal') && !AL_hasflag(flags, 'raw')
       let url = url . 'l50'
     endif
   endif
@@ -3911,7 +4201,7 @@ function! s:DatCatchup_JBBS(host, board, dat, flags)
       let remote = '/bbs/'.cgi.'?BBS='.bbs.'&KEY='.key
     endif
     let result = s:HttpDownload(a:host, remote, tmpfile, '')
-    let result = s:Convert_JBBSHTML2DAT(local, tmpfile, continued)
+    let result = s:Convert_JBBSHTML2DAT(local, tmpfile, continued, s:GetHostEncoding(a:host))
     call delete(tmpfile)
     if !result
       " ƒXƒŒ‚ª‘¶İ‚µ‚È‚¢
@@ -3941,7 +4231,7 @@ function! s:DatCatchup_JBBS(host, board, dat, flags)
   return newarticle
 endfunction
 
-function! s:Convert_JBBSHTML2DAT(datfile, htmlfile, continued)
+function! s:Convert_JBBSHTML2DAT(datfile, htmlfile, continued, enc)
   " jbbs.netAjbbs.shitaraba.comAmachibbs.com‚ÌcgiƒAƒEƒgƒvƒbƒg‚ğ‰ğÍB
   " 1ƒŒƒX‚Í<dt>—v‘f‚©‚çn‚Ü‚é1s‚ÅŒ`¬‚³‚ê‚Ä‚¨‚èA‰º‚Ì—l‚ÈŒ`®i‹¤’ÊjF
   "
@@ -3951,7 +4241,7 @@ function! s:Convert_JBBSHTML2DAT(datfile, htmlfile, continued)
   " ã‚Ì '^' ‚Å¦‚µ‚½•”•ª‚ğíœA‚Ü‚½‚Í‹æØ‚è•¶š '<>' ‚É’uŠ·‚·‚é‚±‚Æ‚ÅA2
   " ‚¿‚á‚ñ‚ÌdatŒ`®‚É•ÏŠ·‚·‚éB
 
-  call AL_execute('1vsplit '.a:htmlfile)
+  call AL_execute('1vsplit ++enc='.a:enc.' '.a:htmlfile)
   if !a:continued
     " ‘Sæ“¾‚Ìê‡Aƒ^ƒCƒgƒ‹‚ğ•Û‚µ‚Ä‚¨‚­
     call search('<title>')
@@ -3960,8 +4250,7 @@ function! s:Convert_JBBSHTML2DAT(datfile, htmlfile, continued)
   " ƒŠƒ‚[ƒgƒzƒXƒg‚ÌƒAƒhƒŒƒX•\¦‹@”\‚ª‚ ‚é”Âi‚Ü‚¿AJBBS‚Ìˆê•”j‚ÅA‹L–’†‚É
   " ‘}“ü‚³‚ê‚é‰üs‚ğC³B—áF
   "
-  " <dt>1 –¼‘OF<b>NAME</b> “Še“úF 2002/07/12(‹à) 14:55 [ remote.host.ip
-  "  ]<br><dd> –{•¶ <br><br>
+  " <dt>1 –¼‘OF<b>NAME</b> “Še“úF 2002/07/12(‹à) 14:55 [ remote.host.ip ]<br><dd> –{•¶ <br><br>
   if getline(search('^<dt>') + 1) =~ '^\s*]'
     silent g/^<dt>/join
   endif
@@ -4162,6 +4451,7 @@ function! s:CommandRegister()
   command! -nargs=1 ChaliceReloadThreadList	call <SID>UpdateBoard('', '', '', <q-args>)
   command! ChaliceReloadThread		call <SID>UpdateThread('', '', '', '', 'ignorecache,force')
   command! ChaliceReloadThreadInc	call <SID>UpdateThread('', '', '', '', 'continue,force')
+  command! -nargs=1 ChaliceReformat	call <SID>Reformat(<q-args>)
   command! ChaliceDoWrite		call <SID>DoWriteBuffer('')
   command! -nargs=? ChaliceWrite	call <SID>OpenWriteBuffer(<f-args>)
   command! -nargs=1 ChaliceHandleURL	call <SID>HandleURL(<q-args>, 'internal')
@@ -4204,6 +4494,7 @@ function! s:CommandUnregister()
   delcommand ChaliceReloadThreadList
   delcommand ChaliceReloadThread
   delcommand ChaliceReloadThreadInc
+  delcommand ChaliceReformat
   delcommand ChaliceDoWrite
   delcommand ChaliceWrite
   delcommand ChaliceHandleURL

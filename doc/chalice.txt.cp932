@@ -1,4 +1,4 @@
-*chalice.txt*	www.2ch.net browser.  Last Change: 17-Apr-2003.
+*chalice.txt*	www.2ch.net browser.  Last Change: 06-Oct-2004.
 
 
 		Chalice 取扱説明書    by MURAOKA Taro (KoRoN)
@@ -112,8 +112,9 @@ NOTE:頻繁な更新はサーバに負担をかけます。必要最低限にしましょう。
 カキコするにはi,I,a,Aのいずれかを押します。また直前に-を付けることで、カーソル
 位置の記事を引用します。
 
-i,I			書き込みモードへ(Iはsage/o,Oも同じ意味)
+i,I			書き込みモードへ(Iはsage)
 a,A			匿名書き込みモードへ(Aはsage)
+o,O			最後の書き込みの名前で(Oはsage)
 
 スレ表示ウィンドウの下にカキコウィンドウが作成されます。
 
@@ -128,7 +129,7 @@ a,A			匿名書き込みモードへ(Aはsage)
 	--------
 
 始めから挿入モードになっているので、適宜入力してください。挿入モードを抜けて、
-<C-CR>(または:q<CR>)を押すと、カキコ実行の確認を求められます。
+<C-CR>(または<C-W><CR>)を押すと、カキコ実行の確認を求められます。
 
 	本当に書き込みますか?(yes/no/cancel): 
 
@@ -166,7 +167,7 @@ NOTE:書き込みウィンドウからは終了できません。まず書き込みを終了させてください。
 	:Chalice
 <
 NOTE: 端末の関係上<C-CR>や<S-CR>が使用できない場合があります。そのような環境で
-は<C-C><CR>と-<CR>をそれぞれ代わりに利用できます。
+は<C-W><CR>と-<CR>をそれぞれ代わりに利用できます。
 
 |chalice-usage-common|		全共通
 |chalice-usage-boardlist|	板一覧
@@ -238,6 +239,8 @@ x			スレを透明あぼーん化
 
 <S-CR>			スレを外部ブラウザで開く
 
+<C-P><C-P>		スレの1だけを表示
+
 ~			カーソル行のスレを栞に登録
 
 #			全スレッドの更新チェック
@@ -289,6 +292,10 @@ p			1画面スクロールアップ
 
 r			現在のスレを更新(差分更新のため高速:推奨)
 
+R			現在のスレを更新(全体取得)
+
+=			現在のスレを再整形(ngword設定変更の反映等)
+
 ~			閲覧中のスレをスレの栞に登録
 
 <Space>			ページ送り + 巡回
@@ -322,9 +329,11 @@ h,l			カテゴリfoldを閉じる(h)・開く(l)
 書き込み					*chalice-usage-write*
 --------
 
-i,I			書き込みモードへ(Iはsage/o,Oも同じ意味)
+i,I			書き込みモードへ(Iはsage)
 
 a,A			匿名書き込みモードへ(Aはsage)
+
+o,O			最後の書き込みの名前で(Oはsage)
 
 =			書き込むスレに更新がないかチェック
 
@@ -352,12 +361,13 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 す。このセクションではオプションの解説と設定例を紹介します。
 
 |chalice-options|		オプション
+|chalice-user-boardlist|	ユーザ定義の板一覧
 |chalice-custom-example|	カスタマイズ例
 
 
 オプション一覧					*chalice-options*
 --------------
-(+ は最近追加された項目)
+(*:最近追加された項目, +:最近変更された項目)
 
 - chalice_username	string (省略値 "名無しさん@Vim%Chalice")
 	書き込み時に自動入力するユーザ名指定する。 >
@@ -376,12 +386,12 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_columns = 160
 <	(解説)Chalice起動時に'columns'を160に設定する。
 
-+ chalice_boardlist_columns	number (省略値 15)
+* chalice_boardlist_columns	number (省略値 15)
 	Chalice 起動時に板一覧のウィンドウの幅を設定する。
 		let chalice_boardlist_columns = 40
 	(解説)Chalice起動時に板一覧のウィンドウの幅を40に設定する。
 
-+ chalice_threadlist_lines	number (省略値 10)
+* chalice_threadlist_lines	number (省略値 10)
 	Chalice 起動時にスレ一覧のウィンドウの高さを設定する。
 		let chalice_threadlist_lines = 15
 	(解説)Chalice起動時にスレ一覧のウィンドウの高さを15に設定する。
@@ -422,6 +432,15 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 	cURLへ渡す追加オプションを指定する >
 		let chalice_curl_options = '-x {host}:{port}'
 <	(解説)プロキシの設定をする(詳細はcURLのマニュアルを参照)。
+
+* chalice_curl_writeoptions
+			string (省略値 "")
+	書き込み時にcURLへ渡す追加オプションを指定する。指定しない場合には
+	chalice_curl_optionsが使用される。純粋にオプションを渡したくない時には
+	空白文字で文字列を構成すれば良い。 >
+		let chalice_curl_options = '--connect-timeout 15 -m 30'
+		let chalice_curl_writeoptions = '--connect-timeout 30 -m 60'
+<	(解説)書き込み時には読み込み時に比べ長めのタイムアウトを設定する。
 
 - chalice_curl_cookies	number (省略値 1)
 	cookieの使用フラグ。0以外の時には使用し0の時にはしない。 >
@@ -506,27 +525,32 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_preview = 0
 <	(解説)自動プレビューを利用しない(手動は可)。
 
-- chalice_previewflags	string (省略値 "")
-	プレビューの挙動を規定するフラグ。 >
++ chalice_previewflags	string (省略値 "")
+	プレビューの動作を設定するフラグ。 >
 		let chalice_previewflags = 'autoclose'
 <	(解説)プレビューをスレの上部に表示する。
 	以下の値のうち1つ、または複数をカンマで区切って指定可能:
 	    1		スレッドを開いた時に1をプレビューする
 	    above	プレビューをスレの上に表示する
 	    autoclose	現在位置にアンカーがなければプレビューを閉じる
+	    stay	<C-P><C-P>でスレの1だけを表示した際、スレ一覧に留まる
 
 - chalice_noredraw	number (省略値 0)
 	redrawによる再描画を抑制する。 >
 		let chalice_noredraw = 1
 <	(解説)遅い端末での画面のチラツキを減らす。
 
-- chalice_writeoptions	string (省略値 "amp,zenkaku")
-	書き込み時に展開する特殊文字を指定する。 >
-		let chalice_writeoptions = "amp,zenkaku,nbsp"
-<	(解説)書き込み文字数制限で書き込めない場合などに利用し、半角空白2文字
-	を全角空白1文字で置き換える。その他に&を&amp;に半角空白を&nbsp;に置換
-	する。デフォルトでは&amp;と&nbsp;の展開のみ("amp,nbsp")が指定され、全
-	角空白への展開はおこなわれない。
++ chalice_writeoptions	string (省略値 "amp,nbsp2")
+	書き込み時の動作を設定するフラグ。
+	以下の値のうち1つ、または複数をカンマで区切って指定可能:
+	    amp		&を&amp;に置換
+	    log		書き込み内容をログファイル(write.log)に記録
+	    nbsp2	半角空白を&nbsp;に置換
+	    retab	書き込み前に本文に対してretabを実行する
+	    zenkaku	半角空白2文字を全角空白1文字で置換
+	amp,nbsp2,zenkakuは書き込み文字制限対策。 >
+		let chalice_writeoptions = "amp,nbsp2,log"
+<	(解説) 書き込みログを作成する。
 
 - chalice_autonumcheck	number (省略値 0)
 	板を移動した時に自動的に新着チェックを行なう。 >
@@ -538,12 +562,12 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_verbose = 1
 <	(解説)1以上に設定すると外部コマンドの実行状況を観察できる。
 
-+ chalice_titlestring	string (省略値 "")
+- chalice_titlestring	string (省略値 "")
 	Chalice実行時にVimのタイトルバーに表示される文字列を変更する。お仕事中
 	に利用していて、タスクバーに「2ちゃんねる」の文字が踊っているのが心苦
 	しいユーザさん向け機能。
 
-+ chalice_ngwords	string (省略値 "")
+- chalice_ngwords	string (省略値 "")
 	玄人向け機能。目障りな記事を「ローカルあぼーん」(擬似削除)するための正
 	規表現パターンを指定します。生DATに対して、指定したパターンで正規表現
 	検索を行い、マッチした行(1つの記事)を無害な内容に置き換えます。"\<NL>"
@@ -554,7 +578,7 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_ngwords = '^山崎渉' ."\<NL>". '^IP記録実験'
 <	(解説)複数のパターン指定の例。
 
-+ chalice_localabone	string (省略値 "")
+- chalice_localabone	string (省略値 "")
 	さらに玄人向け機能。chalice_ngwordsが適用された際に、擬似削除に使用す
 	るラベル。「,」で区切り名前欄とメール欄、そしてテキストを指定する。そ
 	れぞれ「,」「<」「>」を含むテキストは使用できない。フォーマットが不正
@@ -562,8 +586,8 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_localabone = ',,'
 <	(解説) 名前欄、メール欄、テキストを空にする。
 
-+ chalice_loginid	string (省略値 "")
-+ chalice_password	string (省略値 "")
+- chalice_loginid	string (省略値 "")
+- chalice_password	string (省略値 "")
 	2ch認証のIDとパスワード。両方を設定することで、2chにアクセスする際に認
 	証を行なうようになる。認証が正しく行なわれると書き込み制限が緩和された
 	り、DAT落ちしたスレへアクセスできるようになる。認証するには「●」を購
@@ -574,7 +598,7 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_password = 'password_phrase'
 <	(解説)IDとパスワードを指定して認証を行なう
 
-+ chalice_formatedcache_expire
+- chalice_formatedcache_expire
 			number (省略値 14)
 	フォーマットキャッシュの有効日数。Chaliceではスレを表示するのにキャッ
 	シュを用いて高速化しています。一定の期間使用されなかったキャッシュは起
@@ -583,7 +607,7 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 		let chalice_formatedcache_expire = 7
 <	(解説)キャッシュの有効期間を1週間とする
 
-+ chalice_readoptions	string (省略値 "")
+- chalice_readoptions	string (省略値 "")
 	読み込み時の動作に関する設定を行なうオプション。 >
 		let chalice_readoptions = "noenc"
 <	(解説)指定できるオプションと解説は以下のとおり:
@@ -592,12 +616,28 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 			している。しかし、これを無効にして実際のデータのエン
 			コーディングを自動判別して読み込む。
 
-+ chalice_cruise_endmark
+- chalice_cruise_endmark
 			string (省略値 "終了")
 	巡回はこの変数で指定した名前のカテゴリを見つけると停止します。 >
 		let chalice_cruise_endmark = '巡回終了'
 <	(解説)巡回終了というカテゴリのところで巡回が停止します。
 
+
+ユーザ定義の板一覧				*chalice-user-boardlist*	
+------------------
+Chaliceで開くことのできない掲示板に付いてはメニューに使用するURLを設定するか、
+ユーザ定義の板一覧を利用することで対応できる場合があります。栞のファイル
+chalice.bmkと同じディレクトリにboardlist.txtという名前のファイルを作成しておく
+と、板一覧を表示する際にそのファイルの内容がそのまま先頭部分に挿入されます。こ
+れによりデフォルトでは閲覧できない板を開けるようになる場合があります。頻繁に利
+用する板のショートカットとして利用することができます。
+
+boardlist.txtの記述例: >
+
+	■板近道
+	 monazilla.org	http://jbbs.shitaraba.com/computer/351/
+	 ニュース速報+	http://news2.2ch.net/newsplus/
+<
 
 カスタマイズ例					*chalice-custom-example*
 --------------
@@ -685,7 +725,7 @@ Chaliceは様々なオプションを設定することで、動作をカスタマイズすることができま
 Q. カキコウィンドウで<C-CR>したのにカキコされていません!
 A. こういう場合、Chaliceは特にエラーメッセージを出さないので注意が必要です。
    1. <C-CR>キーの使えない環境ではありませんか?
-      UN*Xの端末上などでは<C-CR>が使えない場合があります。<C-C><CR>で代用でき
+      UN*Xの端末上などでは<C-CR>が使えない場合があります。<C-W><CR>で代用でき
       ます。それでもダメな場合は :ChaliceDoWrite コマンドを実行してみてくださ
       い。
    2. オフラインモードではありませんか?
@@ -743,6 +783,11 @@ A. 栞のファイル(chalice.bmk)と同じディレクトリにbookmark.bmkという名前でバック
    れた後にバックアップされてしまった場合を除き、最悪2日前の栞を復帰することが
    できます。
 
+Q. 栞はChalice終了時に自動的に保存されると説明されているのに保存されません
+A. ChaliceQuitAllコマンドを使ってください。
+   Vimのquitallコマンドを使って終了していませんか?。替りにChaliceQuitAllを使っ
+   てください。
+
 Q. ２ちゃんねる以外のBBSに接続できますか?
 A. chalice_menu_urlを適宜設定してみてください。
    ただし、全てのBBSが読み書きできるわけではありません。転んでも泣かない
@@ -776,8 +821,19 @@ A. 最低限日本語が使えるようにインストールされたVimが必須です。
    コンパイルオプションや、iconvの有無を確認し、CP932の日本語ファイルを問題な
    く編集できるよう設定されたVimでなければ、Chaliceの正しい動作は期待できませ
    ん。日本語を扱う上では'encoding', 'fileencodings' 等のオプションは特に重要
-   です。
-
+   です。一般的なUNIX環境(euc-jp環境)では、次のような最低限の設定がされていれ
+   ば正しく動くと期待されます。 >
+	:set encoding=japan
+	:set fileencodings=cp932
+<
+Q. DATDIRって何?
+A. バージョン1.8以降で導入されたキャッシュデータの格納方法の名称です。これを利
+   用することでChaliceの動作が非常に軽快になります。新バージョンを新規にインス
+   トールした場合には自動的にDATDIRが利用されるのですが、旧バージョンから更新
+   して利用する場合には明示的にDATDIRへの移行作業を行なう必要があります。この
+   移行作業はChaliceを起動して次のコマンドを実行するだけで完了します。 >
+	:ChaliceDatdirOn
+<
 Q. 上のどの症例にも当てはまらない誤動作をします。
 A. あなたがしたvimの設定のどれかと、Chaliceとの相性が悪いのかもしれません。
    設定を全て無効化(起動オプション"-u NONE -U NONE"、もしくは[._]\?g\?vimrcを

@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 02-Jul-2002.
+" Last Change: 25-Dec-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -33,7 +33,8 @@ nnoremap <silent> <buffer> <CR>		:ChaliceOpenThread<CR>
 nnoremap <silent> <buffer> <S-CR>	:ChaliceOpenThread external<CR>
 nnoremap <silent> <buffer> -<CR>	:ChaliceOpenThread external<CR>
 nnoremap <silent> <buffer> <C-CR>	:ChaliceOpenThread firstline<CR>
-nnoremap <silent> <buffer> <C-C><CR>	:ChaliceOpenThread firstline<CR>
+nnoremap <silent> <buffer> <C-W><CR>	:ChaliceOpenThread firstline<CR>
+nnoremap <silent> <buffer> <C-P><C-P>	:ChaliceOpenThread firstarticle<CR>
 nnoremap <silent> <buffer> r		:ChaliceReloadThreadList none<CR>
 nnoremap <silent> <buffer> R		:ChaliceReloadThreadList force<CR>
 nnoremap <silent> <buffer> <C-R>	:ChaliceReloadThreadList showabone<CR>
