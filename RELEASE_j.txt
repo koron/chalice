@@ -9,10 +9,10 @@
 Subversionによる配布も行なっております。Subversionを利用することでパッチリリー
 スへの追従が手軽になります。
 
-- 最新版SubversionリポジトリのURL
+- 最新版SubversionリポジトリURL
   http://cvs.kaoriya.net/svn/kaoriya/vimscript/chalice/trunk/
-- リリース版SubversionリポジトリのURL
-  http://cvs.kaoriya.net/svn/kaoriya/vimscript/chalice/tags/
+- リリース版リポジトリURL
+  http://cvs.kaoriya.net/svn/kaoriya/vimscript/chalice/tags/release-1.9
 
 利用するのに必要なChalice以外のソフトウェア、各プラットホームに固有の情報、及び
 アップデート内容、その他詳しいことは総てアーカイブに同梱のREADME_j.txtを参照し
@@ -26,8 +26,6 @@ Subversionによる配布も行なっております。Subversionを利用することでパッチリリー
 - Windows用 cURL (香り屋配布版)
   http://www.kaoriya.net/dist/curl-7.10.8-win32-ssl.tar.bz2
   http://www.kaoriya.net/#ARCHIVE_CURL
-- MacOS X用 cURL情報
-  http://homepage.mac.com/kmoro/pkg/curl-7.10.3.pkg.tbz(リンク切れ)
 - cURLオフィシャルサイト (ソースコード他)
   http://curl.sourceforge.net/
 - Windows用 gzip
