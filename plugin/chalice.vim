@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 17-Dec-2004.
+" Last Change: 21-Dec-2004.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -3425,6 +3425,7 @@ function! s:DoWriteBufferStub(flag)
   " ‘‚«‚İ‚Ìusername‚Æusermail‚ğ•Û‘¶
   let s:last_username = name
   let s:last_usermail = mail
+  let wrote_host = b:host
 
   " ‘‚«‚İŒ‹‰Ê(resfile)‚Ì‰ğÍ
   let retval = 1
@@ -3465,6 +3466,9 @@ function! s:DoWriteBufferStub(flag)
       let is_error = 0
     endif
     if is_error == 1 && search('<title>‘‚«‚±‚İ‚Ü‚µ‚½B</title>', 'w') > 0
+      let is_error = 0
+    endif
+    if is_error == 1 && wrote_host =~ s:mx_servers_machibbs && search('302 Found', 'w') > 0
       let is_error = 0
     endif
     if is_error != 0
