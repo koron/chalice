@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 25-Nov-2001.
+" Last Change: 19-Dec-2001.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -18,6 +18,8 @@ runtime! ftplugin/2ch.vim
 "
 " ÉçÅ[ÉJÉãïœêîÇÃê›íË
 "
+setlocal fileformat=unix
+setlocal foldcolumn=1
 setlocal tabstop=8
 setlocal wrap
 let b:title = ''
@@ -39,6 +41,10 @@ nnoremap <silent> <buffer> r		:ChaliceReloadThreadInc<CR>
 nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd thread<CR>
 nnoremap <silent> <buffer> <C-I>	:ChaliceJumplistNext<CR>
 nnoremap <silent> <buffer> <C-O>	:ChaliceJumplistPrev<CR>
+nnoremap <silent> <buffer> <		:ChaliceGoArticle prev<CR>
+nnoremap <silent> <buffer> ,		:ChaliceGoArticle prev<CR>
+nnoremap <silent> <buffer> >		:ChaliceGoArticle next<CR>
+nnoremap <silent> <buffer> .		:ChaliceGoArticle next<CR>
 
 nnoremap <silent> <buffer> i		:ChaliceWrite<CR>
 nnoremap <silent> <buffer> I		:ChaliceWrite sage<CR>
@@ -48,10 +54,6 @@ nnoremap <silent> <buffer> o		:ChaliceWrite<CR>
 nnoremap <silent> <buffer> O		:ChaliceWrite sage<CR>
 
 nnoremap <silent> <buffer> p		<C-b>
-nnoremap <silent> <buffer> <		:call search('^\d\+', 'bW')<CR>zt
-nnoremap <silent> <buffer> ,		:call search('^\d\+', 'bW')<CR>zt
-nnoremap <silent> <buffer> >		:call search('^\d\+', 'W')<CR>zt
-nnoremap <silent> <buffer> .		:call search('^\d\+', 'W')<CR>zt
 nnoremap <silent> <buffer> K		<C-y>
 nnoremap <silent> <buffer> J		<C-e>
 

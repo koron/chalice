@@ -2,7 +2,7 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 25-Nov-2001.
+" Last Change: 27-Dec-2001.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -49,17 +49,28 @@ endif
 
 " ƒŠƒ[ƒhƒ^ƒCƒ€
 "   g:chalice_reloadinterval_boardlist	”Âˆê——‚ÌƒŠƒ[ƒhƒ^ƒCƒ€(1TŠÔ)
-"   g:chalice_reloadinterval_threadlist	”Â‚ÌƒŠƒ[ƒhƒ^ƒCƒ€(1ŠÔ)
+"   g:chalice_reloadinterval_threadlist	”Â‚ÌƒŠƒ[ƒhƒ^ƒCƒ€(30•ªŠÔ)
 "   g:chalice_reloadinterval_thread	ƒXƒŒ‚ÌƒŠƒ[ƒhƒ^ƒCƒ€(5•ªŠÔ/–¢g—p)
 if !exists('g:chalice_reloadinterval_boardlist')
   let g:chalice_reloadinterval_boardlist = 604800
 endif
 if !exists('g:chalice_reloadinterval_threadlist')
-  let g:chalice_reloadinterval_threadlist = 3600
+  let g:chalice_reloadinterval_threadlist = 1800
 endif
 "   g:chalice_reloadinterval_thread	ƒXƒŒ‚ÌƒŠƒ[ƒhƒ^ƒCƒ€(5•ªŠÔ/–¢g—p)
 if !exists('g:chalice_reloadinterval_thread')
   let g:chalice_reloadinterval_thread = 300
+endif
+
+" ƒXƒŒ‘N“x•\¦
+"   ƒXƒŒdat‚ÌÅIXV‚©‚çİ’è‚³‚ê‚½ŠÔ(2ŠÔ)‚ªŒo‰ß‚µ‚½‚©‚ğ’ñ¦‚·‚éB
+"   g:chalice_threadinfo		‘N“x•\¦‚Ì—LŒø/–³Œøƒtƒ‰ƒO
+"   g:chalice_threadinfo_expire		‘N“x•ÛŠúŠÔ(1ŠÔ)
+if !exists('g:chalice_threadinfo')
+  let g:chalice_threadinfo = 1
+endif
+if !exists('g:chalice_threadinfo_expire')
+  let g:chalice_threadinfo_expire = 3600
 endif
 
 " ƒ}ƒ‹ƒ`ƒ†[ƒUİ’è
@@ -98,6 +109,11 @@ endif
 " 0ˆÈã‚Éİ’è‚·‚é‚ÆƒfƒoƒbƒO—p‚ÉƒƒbƒZ[ƒW‚ª‘½‚ß‚É“ü‚Á‚Ä‚é
 if !exists('g:chalice_verbose')
   let g:chalice_verbose = 0
+endif
+
+" Chalice ‹N“®‚É'columns'‚ğ•Ï‚¦‚é‚±‚Æ‚ª‚Å‚«‚é(-1:–³Œø)
+if !exists('g:chalice_columns')
+  let g:chalice_columns = -1
 endif
 
 "------------------------------------------------------------------------------
@@ -140,7 +156,7 @@ let s:msg_chalice_quit = 'Chalice ````````I—¹````````'
 let s:msg_chalice_start = 'Chalice ƒLƒ{ƒ“ƒk'
 " 1sƒwƒ‹ƒv
 let s:msg_help_boardlist = '(”Âˆê——)  <CR>:”ÂŒˆ’è  j/k:”Â‘I‘ğ  h/l:ƒJƒeƒSƒŠ•Â/ŠJ  R:XV'
-let s:msg_help_threadlist = '(ƒXƒŒˆê——)  <CR>:ƒXƒŒŒˆ’è j/k:ƒXƒŒ‘I‘ğ  R:XV'
+let s:msg_help_threadlist = '(ƒXƒŒˆê——)  <CR>:ƒXƒŒŒˆ’è j/k:ƒXƒŒ‘I‘ğ  d:datíœ  R:XV'
 let s:msg_help_thread = '(ƒXƒŒƒbƒh)  i:‘  I:sage‘  a:“½–¼‘  A:“½–¼sage  r:XV'
 let s:msg_help_bookmark = '(ƒXƒŒ‚Ìx)  <CR>:URLŒˆ’è  h/l:•Â/ŠJ <C-A>:•Â‚¶‚é  [•ÒW‰Â”\]'
 let s:msg_help_write = '(‘‚«‚İ)  <C-CR>:‘‚«‚İÀs  <C-W>c:•Â‚¶‚é  [•ÒW‰Â”\]'
@@ -150,7 +166,7 @@ let s:msg_help_write = '(‘‚«‚İ)  <C-CR>:‘‚«‚İÀs  <C-W>c:•Â‚¶‚é  [•ÒW‰Â”
 "   “à•”‚Å‚Ì‚İg—p‚·‚é‚à‚Ì
 
 " ƒfƒoƒbƒOƒtƒ‰ƒO (DEBUG FLAG)
-let s:debug = 0
+let s:debug = 1
 
 " 2chˆË‘¶ƒf[ƒ^
 let s:encoding = 'cp932'
@@ -180,6 +196,9 @@ let s:cmd_curl = ''
 let s:cmd_conv = ''
 let s:cmd_gzip = ''
 
+" MATCH PATTERNS
+let s:mx_thread_dat = '^[ !+] \(.\+\) (\(\d\+\)).*\t\+\(\d\+\.dat\)'
+
 " ƒRƒ}ƒ“ƒh‚Ìİ’è
 command! Chalice			call <SID>ChaliceOpen()
 
@@ -195,6 +214,36 @@ execute "autocmd BufLeave " . s:buftitle_write . " set undolevels=0"
 execute "autocmd BufDelete " . s:buftitle_threadlist . " if s:opened_bookmark|call s:CloseBookmark()|endif"
 augroup END
 
+"------------------------------------------------------------------------------
+" DEVELOPING FUNCTIONS
+" ŠJ”­“rãŠÖ”
+
+"
+" ƒXƒŒ‚Ì.dat‚ğíœ‚·‚é
+"
+function! s:DeleteThreadDat()
+  call s:GoBuf_ThreadList()
+  " ƒoƒbƒtƒ@‚ªƒXƒŒˆê——‚Å‚Í‚È‚©‚Á‚½ê‡A‘¦I—¹
+  if b:host == '' || b:board == ''
+    return
+  endif
+
+  " ƒJ[ƒ\ƒ‹‚ÌŒ»İˆÊ’u‚©‚çdat–¼‚ğæ“¾
+  let curline = getline('.')
+  if curline =~ s:mx_thread_dat
+    let dat = substitute(curline, s:mx_thread_dat, '\3', '')
+    " host,board,dat‚©‚çƒ[ƒJƒ‹ƒtƒ@ƒCƒ‹–¼‚ğ¶¬
+    let local = s:GenerateLocalDat(b:host, b:board, dat)
+    " ƒtƒ@ƒCƒ‹‚ª‚ ‚ê‚ÎÁ‹
+    if filereadable(local)
+      call delete(local)
+      if g:chalice_threadinfo
+	call s:FormatThreadInfo(line('.'), line('.'))
+      endif
+    endif
+  endif
+endfunction
+
 "
 " URL‚ğChalice‚ÅŠJ‚­
 "
@@ -208,12 +257,37 @@ function! s:HandleURL(url, flag)
     " ‹­§“I‚ÉŠO•”ƒuƒ‰ƒEƒU‚ğg—p‚·‚é‚æ‚¤‚Éw’è‚³‚ê‚½‚©URL‚ªA2ch‚Å‚Í‚È‚¢
     call s:OpenURL(a:url)
   else
-    " URL‚ª2ch‚Æ”»’f‚³‚ê‚é
-    "	s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat‚ÍUpdateThread()“à
-    "	‚Åİ’è‚³‚ê‚éˆÃ–Ù“I‚È–ß‚è’lB
-    call s:UpdateThread('', s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat . '.dat', 'continue')
     if a:flag !~ '\c\<noaddhist\>'
-      call s:AddHistoryJump(b:host, b:board, b:dat, line('.'))
+      call s:AddHistoryJump(s:ScreenLine(), line('.'))
+    endif
+
+    " URL‚ª2ch‚Æ”»’f‚³‚ê‚é
+    "	s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat‚ÍParse2chURL()“à‚Å
+    "	İ’è‚³‚ê‚éˆÃ–Ù“I‚È–ß‚è’lB
+    call s:UpdateThread('', s:parse2ch_host, s:parse2ch_board, s:parse2ch_dat . '.dat', 'continue')
+
+    if s:parse2ch_range_mode =~ 'r'
+      if s:parse2ch_range_mode !~ 'l'
+	" ”ñƒŠƒXƒgƒ‚[ƒh
+	" •\¦”ÍˆÍŒã‚Ìfolding
+	if s:parse2ch_range_end != '$'
+	  let fold_start = s:GetLnum_Article(s:parse2ch_range_end + 1)  - 1
+	  silent! execute fold_start . ',$fold'
+	endif
+	" •\¦”ÍˆÍ‘O‚Ìfolding
+	if s:parse2ch_range_start > 1
+	  let fold_start = s:GetLnum_Article(s:parse2ch_range_mode =~ 'n' ? 1 : 2) - 1
+	  let fold_end = s:GetLnum_Article(s:parse2ch_range_start) - 2
+	  silent! execute fold_start . ',' . fold_end . 'fold'
+	endif
+      else
+	" ƒŠƒXƒgƒ‚[ƒh
+	" TODO: •\¦”ÍˆÍw’è‚ğ‰ğß
+      endif
+    endif
+
+    if a:flag !~ '\c\<noaddhist\>'
+      call s:AddHistoryJump(s:ScreenLine(), line('.'))
     endif
   endif
   return 1
@@ -221,26 +295,27 @@ endfunction
 
 "
 " URL‚ğŠO•”ƒuƒ‰ƒEƒU‚ÉŠJ‚©‚¹‚é
-"   TODO: '&'‚ğŠÜ‚ŞURL‚ğ³‚µ‚­ŠJ‚¯‚é‚æ‚¤‚É‚·‚éB
 "
 function! s:OpenURL(url)
   let retval = 0
   if a:url == ''
     return retval
   endif
-  let url = a:url
+  let url = escape(a:url, '%#')
   if has('win32')
     " WindowsŠÂ‹«‚Å‚ÌŠO•”ƒuƒ‰ƒEƒU‹N“®
-    if !has('win95')
+    if !has('win95') && url !~ '&'
       " NTŒn‚Å‚Í‚±‚Á‚¿‚Ì•û‚ª‚¤‚Ü‚­s‚­‚±‚Æ‚ª‘½‚¢
       silent execute '!start /min cmd /c start ' . url
+      if s:debug | let @a = '!start /min cmd /c start ' . url | endif
     else
-      silent! execute "!start rundll32 url.dll,FileProtocolHandler " . a:url
+      silent! execute "!start rundll32 url.dll,FileProtocolHandler " . url
+      if s:debug | let @a = "!start rundll32 url.dll,FileProtocolHandler " . url | endif
     endif
     let retval = 1
   elseif g:chalice_exbrowser != ''
     " ”ñWindowsŠÂ‹«‚Å‚ÌŠO•”ƒuƒ‰ƒEƒU‹N“®
-    let excmd = substitute(g:chalice_exbrowser, '%URL%', a:url, 'g')
+    let excmd = substitute(g:chalice_exbrowser, '%URL%', url, 'g')
     call s:DoExternalCommand(excmd)
     let retval = 1
   endif
@@ -267,14 +342,15 @@ function! s:HandleJump(flag)
     " ƒXƒŒ‚Ì‹L–”Ô†‚¾‚Á‚½ê‡
     let num = substitute(matchstr(context, mx1), mx1, '\2', '')
     if a:flag =~ '\c\<internal\>'
-      let lold = line('.')
-      let lnum = search('^' . num . '  ', 'bw')
-      if lnum
+      let oldsc = s:ScreenLine()
+      let oldcur = line('.')
+      let lnum = s:GoThread_Article(num)
+      if lnum > 0
+	silent! execute lnum . "foldopen!"
 	" QÆŒ³‚ğƒqƒXƒgƒŠ‚É“ü‚ê‚é
-	"call s:AddHistoryJump(b:host, b:board, b:dat, lold)
+	call s:AddHistoryJump(oldsc, oldcur)
 	" QÆæ‚ğƒqƒXƒgƒŠ‚É“ü‚ê‚é
-	call s:AddHistoryJump(b:host, b:board, b:dat, lnum)
-	silent normal! zt
+	call s:AddHistoryJump(s:ScreenLine(), line('.'))
       endif
     elseif a:flag =~ '\c\<external\>'
       if b:host != '' && b:board != '' && b:dat != ''
@@ -300,6 +376,7 @@ function! s:UpdateThread(title, host, board, dat, flag)
     let b:title = s:prefix_thread . a:title
     let b:title_raw = a:title
   endif
+  " ƒoƒbƒtƒ@•Ï”‚Ìhost,board,dat‚ğˆø”‚©‚çì¬(ƒRƒs[‚¾‚¯‚Ç‚Ë)
   if a:host != ''
     let b:host = a:host
   endif
@@ -314,24 +391,38 @@ function! s:UpdateThread(title, host, board, dat, flag)
     return
   endif
 
-  " ƒpƒX‚ğ¶¬‚µ‚ÄƒXƒŒƒbƒh‚Ì“à—e‚ğƒ_ƒEƒ“ƒ[ƒh
-  let local = 'dat_' . b:host . substitute(b:board, '/', '_', 'g') . '_' . substitute(b:dat, '\.dat$', '', '')
+  " URL‚Æƒ_ƒEƒ“ƒ[ƒhƒpƒX‚ğ¶¬
+  let local = s:GenerateLocalDat(b:host, b:board, b:dat)
   let remote = b:board . '/dat/' . b:dat
-  if !filereadable(s:dir_cache . local) || a:flag !~ '\c\<noforce\>'
+  let prevsize = 0
+  " ƒXƒŒƒbƒh‚Ì“à—e‚ğƒ_ƒEƒ“ƒ[ƒh
+  if !filereadable(local) || a:flag !~ '\c\<noforce\>'
+    " ƒtƒ@ƒCƒ‹‚ÌŒ³‚ÌƒTƒCƒY‚ğŠo‚¦‚Ä‚¨‚­
+    if filereadable(local)
+      let prevsize = getfsize(local)
+    endif
     call s:HttpDownload(b:host, remote, local, a:flag)
+    " (•K—v‚È‚ç‚Î)ƒXƒŒˆê——‚ÌƒXƒŒî•ñ‚ğXV
+    if g:chalice_threadinfo
+      call s:FormatThreadInfo(1, 0)
+      call s:GoBuf_Thread()
+    endif
   endif
 
   " ƒXƒŒƒbƒh‚ğƒoƒbƒtƒ@‚Éƒ[ƒh‚µ‚Ä®Œ`
   call s:ClearBuffer()
-  silent! execute "read " . s:dir_cache . local
+  silent! execute "read " . local
   normal! gg"_dd
-
-  " ‘Ò‚Á‚Ä‚Ë™ƒƒbƒZ[ƒW
-  call s:EchoH('WarningMsg', s:msg_wait_threadformat)
+  if prevsize > 0
+    silent! execute 'normal! ' . prevsize . 'go'
+    let newarticle = line('.') + 1
+  else
+    let newarticle = 1
+  endif
 
   " a:title‚ªİ’è‚³‚ê‚Ä‚¢‚È‚¢A1‚Ì‘‚«‚İ‚©‚çƒXƒŒ–¼‚ğ”»’f‚·‚é
   if a:title == ''
-    let title = substitute(getline('.'), '^.\+<>\(.\+\)$', '\1', '')
+    let title = substitute(getline(1), '^.\+<>\(.\+\)$', '\1', '')
     if title != ''
       " ƒXƒŒ‚Ìƒ^ƒCƒgƒ‹‚ğƒoƒbƒtƒ@–¼‚Éİ’è
       let b:title = s:prefix_thread . title
@@ -339,46 +430,12 @@ function! s:UpdateThread(title, host, board, dat, flag)
     endif
   endif
 
-  " Še‘‚«‚İ‚É”Ô†‚ğU‚é
-  let i = 1
-  let endline = line('$')
-  while i <= endline
-    call setline(i, i . '<>' . getline(i))
-    let i = i + 1
-  endwhile
+  " ®Œ`
+  call s:FormatThread()
 
-  " ‘‚«‚İî•ñ‚ÌØ‚è•ª‚¯
-  "   ƒXƒŒ‚Ìdat‚ÌƒtƒH[ƒ}ƒbƒg‚ÍA’¼‘O‚És“ª‚És(‹L–)”Ô†‚ğ•t‚¯‚Ä‚¢‚é‚Ì‚Å:
-  "	”Ô†<>–¼‘O<>ƒ[ƒ‹<>ŠÔ<>–{•¶<>ƒXƒŒ–¼
-  "   ‚Æ‚È‚éBƒXƒŒ–¼‚Íæ“ª‚Ì‚İ
-  if 1
-    " ‘¬‚¢‚ªƒXƒ^ƒbƒNƒGƒ‰[‚Å—‚¿‚é‰Â”\«‚ª‚ ‚éB”n‚ÌŒ•B
-    " ‚»‚ê‚Å‚à—‚¿‚é‚±‚Æ‚Í­‚È‚­‚È‚Á‚½‚Í‚¸‚¾‚ªc
-    let m1 = '\(\%([^<]\|<[^<>]\)*\)<>' " (<>‚ğŠÜ‚Ü‚È‚¢•¶š—ñ)<> ‚Éƒ}ƒbƒ`
-    let m2 = '\(.*\)<>'
-    let mx = '^\(\d\+\)<>' .m1.m1.m1.m2. '\(.*\)$'
-  else
-    " ’x‚¢‚ªƒXƒ^ƒbƒNƒGƒ‰[‚Å‚Í—‚¿‚È‚¢
-    let mx = '^\(\d\+\)<>\(.*\)<>\(.*\)<>\(.*\)<>\(.*\)<>\(.*\)$'
+  if !s:GoThread_Article(newarticle)
+    normal! Gzb
   endif
-  let out = '\r--------\r\1  From:\2  Date:\4  Mail:\3\r  \5'
-  silent! execute '%s/\s*<>\s*/<>/g'
-  silent! execute '%s/' . mx . '/' . out
-  " –{•¶‚Ì‰üsˆ—
-  silent! execute '%s/\s*<br>\s*/\r  /g'
-
-  " <A>ƒ^ƒOÁ‚µ
-  silent! execute '%s/<\/\?a[^>]*>//g'
-  " ŒÂlƒLƒƒƒbƒv‚Ì<b>ƒ^ƒOÁ‚µ
-  silent! execute '%s/\s*<\/\?b>//g'
-  " “Áê•¶š’×‚µ
-  silent! execute '%s/&amp;/\&/g'
-  silent! execute '%s/&gt;/>/g'
-  silent! execute '%s/&lt;/</g'
-  silent! execute '%s/&quot;/"/g'
-  silent! execute '%s/&nbsp;/ /g'
-
-  normal! gg"_ddGzb
   redraw!
   call s:EchoH('WarningMsg', s:msg_help_thread)
 endfunction
@@ -409,27 +466,21 @@ function! s:UpdateBoard(title, host, board, force)
   endif
 
   " ƒpƒX‚ğ¶¬‚µ‚ÄƒXƒŒˆê——‚ğƒ_ƒEƒ“ƒ[ƒh
-  let local = "subject_" . b:host . substitute(b:board, '/', '_', 'g')
+  let local = s:GenerateLocalSubject(b:host, b:board)
   let remote = b:board . '/subject.txt'
   let updated = 0
-  if a:force || !filereadable(s:dir_cache . local) || localtime() - getftime(s:dir_cache . local) > g:chalice_reloadinterval_threadlist
+  if a:force || !filereadable(local) || localtime() - getftime(local) > g:chalice_reloadinterval_threadlist
     call s:HttpDownload(b:host, remote, local, '')
     let updated = 1
   endif
 
   " ƒXƒŒˆê——‚ğƒoƒbƒtƒ@‚Éƒ[ƒh‚µ‚Ä®Œ`
   call s:ClearBuffer()
-  silent! execute "read " . s:dir_cache . local
+  silent! execute "read " . local
+  " ®Œ`
+  call s:FormatBoard()
 
-  " ƒXƒŒƒf[ƒ^(.dat)‚Å‚Í‚È‚¢s‚ğíœ
-  silent! execute '%g!/^\d\+\.dat/delete _'
-  " .dat–¼‚ğ‰B•Á
-  silent! execute '%s/^\(\d\+\.dat\)<>\(.*\)$/ \2\t\t\t\t\1'
-  " “Áê•¶š’×‚µ
-  silent! execute '%s/&amp;/\&/g'
-  silent! execute '%s/&gt;/>/g'
-  silent! execute '%s/&lt;/</g'
-
+  " æ“ªs‚ÖˆÚ“®
   silent! normal! gg0
 
   if !updated
@@ -441,6 +492,37 @@ endfunction
 "------------------------------------------------------------------------------
 " b’è“I‚ÉŒÅ‚Ü‚Á‚½ŠÖ”ŒQ 
 " FIXED FUNCTIONS
+
+" ƒXƒNƒŠ[ƒ“‚É•\¦‚³‚ê‚Ä‚¢‚éæ“ª‚Ìs”Ô†‚ğæ“¾‚·‚é
+function! s:ScreenLine()
+  let wline = winline() - 1
+  silent! normal! H
+  let retval = line('.')
+  while wline > 0
+    silent! execute 'normal! gj'
+    let wline = wline - 1
+  endwhile
+  return retval
+endfunction
+
+function! s:ScreenLineJump(scline, curline)
+  " ‘å‘Ì‚ÌˆÊ’u‚Ü‚ÅƒWƒƒƒ“ƒv
+  let curline = a:curline > 0 ? a:curline - 1 : 0
+  silent! execute 'normal! ' . (a:scline + curline) . 'G'
+  " –Ú“IˆÊ’u‚Æ‚Ì·‚ğŒv‘ª
+  let offset = a:scline - s:ScreenLine()
+  if offset < 0
+    silent! execute 'normal! ' . (-offset) . "\<C-Y>"
+  elseif offset > 0
+    silent! execute 'normal! ' . offset . "\<C-E>"
+  endif
+  " ƒXƒNƒŠ[ƒ““à‚Å‚ÌƒJ[ƒ\ƒ‹ˆÊ’u‚ğİ’è‚·‚é
+  silent! execute 'normal! H'
+  while curline > 0
+    silent! execute 'normal! gj'
+    let curline = curline - 1
+  endwhile
+endfunction
 
 function! s:ClearBuffer()
   "normal! gg"_dG0
@@ -489,12 +571,14 @@ function! s:ChaliceClose(flag)
 
   " •ÏX‚µ‚½ƒOƒ[ƒoƒ‹ƒIƒvƒVƒ‡ƒ“‚Ì•œ‹A
   let &charconvert = s:charconvert
+  let &columns = s:columns
   let &foldcolumn = s:foldcolumn
   let &ignorecase = s:ignorecase
   let &lazyredraw = s:lazyredraw
   let &wrapscan = s:wrapscan
   let &winwidth = s:winwidth
   let &winheight = s:winheight
+  let &scrolloff = s:scrolloff
   let &statusline = s:statusline
   let &titlestring = s:titlestring
   let &undolevels = s:undolevels
@@ -518,6 +602,7 @@ function! s:CharConvert()
 endfunction
 
 function! ChaliceDebug()
+  echo "s:sid=".s:sid
   echo "s:cmd_curl=".s:cmd_curl
   echo "s:cmd_conv=".s:cmd_conv
   echo "s:cmd_gzip=".s:cmd_gzip
@@ -610,12 +695,14 @@ function! s:ChaliceOpen()
   " •ÏX‚·‚éƒOƒ[ƒoƒ‹ƒIƒvƒVƒ‡ƒ“‚Ì•Û‘¶
   let s:opend = 1
   let s:charconvert = &charconvert
+  let s:columns = &columns
   let s:foldcolumn = &foldcolumn
   let s:ignorecase = &ignorecase
   let s:lazyredraw = &lazyredraw
   let s:wrapscan = &wrapscan
   let s:winwidth = &winwidth
   let s:winheight = &winheight
+  let s:scrolloff = &scrolloff
   let s:statusline = &statusline
   let s:titlestring = &titlestring
   let s:undolevels = &undolevels
@@ -624,13 +711,17 @@ function! s:ChaliceOpen()
   if s:cmd_conv != ''
     let &charconvert = s:sid . 'CharConvert()'
   endif
+  if g:chalice_columns > 0
+    let &columns = g:chalice_columns
+  endif
   set foldcolumn=0
   set ignorecase
   set lazyredraw
   set wrapscan
   set winheight=8
   set winwidth=15
-  let &statusline = '%{' . s:sid . 'GetBufferTitle()}%=%l/%L'
+  set scrolloff=0
+  let &statusline = '%<%{' . s:sid . 'GetBufferTitle()}%=%l/%L'
   let &titlestring = s:label_vimtitle
   set undolevels=0
 
@@ -674,19 +765,19 @@ endfunction
 function! s:OpenThread(...)
   let flag = (a:0 > 0) ? a:1 : 'internal'
   let curline = getline('.')
-  let mx1 = '^ \(.\+\) (\d\+)\s\+\(\d\+\.dat\)'
   let mx2 = '\(http://[-#%&+,./0-9:;=?A-Za-z_~]\+\)'
 
-  if curline =~ mx1
+  if curline =~ s:mx_thread_dat
     let host = b:host
     let board = b:board
-    let title = substitute(curline, mx1, '\1', '')
-    let dat = substitute(curline, mx1, '\2', '')
+    let title = substitute(curline, s:mx_thread_dat, '\1', '')
+    let dat = substitute(curline, s:mx_thread_dat, '\3', '')
     let url = 'http://' . host . '/test/read.cgi' . board . '/'. substitute(dat, '\.dat$', '', '') . '/l50'
   elseif curline =~ mx2
     let url = matchstr(curline, mx2)
   else
-    normal! za
+    " fold‚ÌŠJ•Â‚ğƒgƒOƒ‹
+    normal! 0za
     return
   endif
 
@@ -694,7 +785,7 @@ function! s:OpenThread(...)
   if flag =~ '\c\<firstline\>'
     normal! gg
   endif
-  call s:AddHistoryJump(b:host, b:board, b:dat, line('.'))
+  call s:AddHistoryJump(s:ScreenLine(), line('.'))
 endfunction
 
 "
@@ -705,7 +796,7 @@ function! s:OpenBoard(...)
   let mx = '^ \(\S\+\)\s\+http://\([^/]\+\)\(/\S*\).*$'
   if board !~ mx
     " fold‚ÌŠJ•Â‚ğƒgƒOƒ‹
-    normal! za
+    normal! 0za
     return
   endif
 
@@ -730,13 +821,45 @@ endfunction
 " —^‚¦‚ç‚ê‚½URL‚ğ2ch‚©‚Ç‚¤‚©”»’f‚µ‚é!!
 "
 function! s:Parse2chURL(url)
-  let mx = '^http://\([^/]\+\)/test/read.cgi\(/[^/]\+\)/\(\d\+\).*'
+  let mx = '^http://\([^/]\+\)/test/read.cgi\(/[^/]\+\)/\(\d\+\)\(.*\)'
   if a:url !~ mx
     return 0
   endif
   let s:parse2ch_host = substitute(a:url, mx, '\1', '')
   let s:parse2ch_board = substitute(a:url, mx, '\2', '')
   let s:parse2ch_dat = substitute(a:url, mx, '\3', '')
+
+  " •\¦”ÍˆÍ‚ğ‰ğß
+  " Ql‘—¿: http://pc.2ch.net/test/read.cgi/tech/1002820903/
+  let range = substitute(a:url, mx, '\4', '')
+  let mx_n1 = '^/\(n\=\)\(\d\+\)-\(\d\+\)$'
+  let mx_n2 = '^/\(n\=\)\(\d\+\)-$'
+  let mx_n3 = '^/\(n\=\)-\(\d\+\)$'
+  let mx_n4 = '^/\(n\=l\=\)\(\d\+\)$'
+  let article_mode = ''
+  let article_start = ''
+  let article_end = ''
+  if range =~ mx_n1
+    let article_mode = 'r' . substitute(range, mx_n1, '\1', '')
+    let article_start = substitute(range, mx_n1, '\2', '')
+    let article_end = substitute(range, mx_n1, '\3', '')
+  elseif range =~ mx_n2
+    let article_mode = 'r' . substitute(range, mx_n2, '\1', '')
+    let article_start = substitute(range, mx_n2, '\2', '')
+    let article_end = '$'
+  elseif range =~ mx_n3
+    let article_mode = 'r' . substitute(range, mx_n3, '\1', '')
+    let article_start = 1
+    let article_end = substitute(range, mx_n3, '\2', '')
+  elseif range =~ mx_n4
+    let article_mode = 'r' . substitute(range, mx_n4, '\1', '')
+    let article_start = substitute(range, mx_n4, '\2', '')
+    let article_end = article_start
+  endif
+  let s:parse2ch_range_mode = article_mode
+  let s:parse2ch_range_start = article_start
+  let s:parse2ch_range_end = article_end
+
   return 1
 endfunction
 
@@ -779,7 +902,7 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
   redraw!
   call s:EchoH('WarningMsg', s:msg_wait_download)
 
-  let local = s:dir_cache . a:localpath
+  let local = a:localpath
   let url = 'http://' . a:host . '/' . substitute(a:remotepath, '^/', '', '')
   let continued = 0
   let compressed = 0
@@ -801,7 +924,7 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
   if !continued && g:chalice_gzip && s:cmd_gzip != ''
     let compressed = 1
     let local = local . '.gz'
-    let opts = ' -H Accept-Encoding:gzip,deflate'
+    let opts = opts . ' -H Accept-Encoding:gzip,deflate'
   endif
 
   " ƒRƒ}ƒ“ƒh\¬ƒ_ƒEƒ“ƒ[ƒh
@@ -829,20 +952,21 @@ function! s:UpdateBoardList(force)
   let local = s:dir_cache . s:menu_localpath
   " ”Âˆê——‚Ì“Ç‚İ‚İ‚Æ®Œ`
   if a:force || !filereadable(local) || localtime() - getftime(local) > g:chalice_reloadinterval_boardlist
-    call s:HttpDownload(s:menu_host, s:menu_remotepath, s:menu_localpath, '')
+    call s:HttpDownload(s:menu_host, s:menu_remotepath, local, '')
   endif
   call s:ClearBuffer()
   silent! execute 'read ' . local
   " ‰üs<BR>‚ğ–{“–‚Ì‰üs‚É
   silent! execute "%s/\\c<br>/\r/g"
   " ƒJƒeƒSƒŠ‚Æ”Â‚Ö‚ÌƒŠƒ“ƒNˆÈŠO‚ğÁ‹
-  silent! execute '%g!/^<[AB]/delete _'
+  silent! execute '%g!/^\c<[AB]\>/delete _'
   " ƒJƒeƒSƒŠ‚ğ®Œ`
   silent! execute '%s/^<B>\([^<]*\)<\/B>/' . s:label_boardcategory_mark . '\1/'
   " ”Â–¼‚ğ®Œ`
   silent! execute '%s/^<A HREF=\([^ ]*\)[^>]*>\([^<]*\)<\/A>/ \2\t\t\t\t\1'
   " u2ch‘‡ˆÄ“àv‚ğíœc–{“–‚Í‚¿‚á‚ñ‚Æƒ`ƒFƒbƒN‚µ‚È‚«‚áƒ_ƒ‚¾‚¯‚ÇB
-  normal! gg"_dd0
+  silent! execute '1,/^¡/-1delete _'
+  "normal! gg"_dd0
 
   " foldingì¬
   silent! normal! gg
@@ -875,6 +999,26 @@ endfunction
 "------------------------------------------------------------------------------
 " MOVE AROUND BUFFER
 " ƒoƒbƒtƒ@ˆÚ“®—pŠÖ”
+
+function! s:GetLnum_Article(num)
+  call s:GoBuf_Thread()
+  if a:num =~ '\c\<next\>'
+    let lnum = search('^\d\+  ', 'W')
+  elseif a:num =~ '\c\<prev\>'
+    let lnum = search('^\d\+  ', 'bW')
+  else
+    let lnum = search('^' . a:num . '  ', 'bw')
+  endif
+  return lnum
+endfunction
+
+function! s:GoThread_Article(num)
+  let lnum = s:GetLnum_Article(a:num)
+  if lnum
+    silent! execute "normal! zt\<C-Y>"
+  endif
+  return lnum
+endfunction
 
 function! s:GoBuf_Write()
   let retval = s:SelectWindowByName(s:buftitle_write)
@@ -1002,9 +1146,11 @@ endif
 "
 " ƒWƒƒƒ“ƒv—š—ğ‚É€–Ú‚ğ’Ç‰Á
 "
-function! s:AddHistoryJump(host, board, dat, value)
-  if s:JumplistCurrent() != a:value
-    call s:JumplistAdd(a:host . ' ' . a:board . ' ' . a:dat . ' ' . a:value)
+function! s:AddHistoryJump(scline, curline)
+  call s:GoBuf_Thread()
+  let packed = b:host . ' ' . b:board . ' ' . b:dat . ' ' . a:scline
+  if strpart(s:JumplistCurrent(), 0, strlen(packed)) !=# packed
+    call s:JumplistAdd(packed . ' ' . a:curline . ' ' . b:title_raw)
   endif
 endfunction
 
@@ -1018,22 +1164,23 @@ function! s:DoHistoryJump(flag)
     let data = s:JumplistPrev()
   endif
 
-  let mx = '^\(\S\+\) \(\S\+\) \(\S\+\) \(\S\+\)'
+  let mx = '^\(\S\+\) \(\S\+\) \(\S\+\) \(\S\+\) \(\S\+\).*$'
   if data =~ mx
-    " TODO: ‚à‚Á‚Æ‚“x‚ÈƒWƒƒƒ“ƒv‚ğ!!
+    " —š—ğƒf[ƒ^‚ğ‰ğß
     let host = substitute(data, mx, '\1', '')
     let board = substitute(data, mx, '\2', '')
     let dat = substitute(data, mx, '\3', '')
-    let lnum = substitute(data, mx, '\4', '')
+    let scline = substitute(data, mx, '\4', '')
+    let curline = substitute(data, mx, '\5', '')
+    " —š—ğ‚É‚ ‚í‚¹‚Äƒoƒbƒtƒ@‚ğˆÚ“®
     call s:GoBuf_Thread()
     if host != b:host || board != b:board || dat != b:dat
       call s:UpdateThread('', host, board, dat, 'continue,noforce')
     endif
-    let opt = (lnum >= line('$') ? 'zb' : 'zt')
-    silent! execute "normal! " . lnum . "G" . opt
+    " ƒXƒNƒŠ[ƒ“•\¦ŠJns‚ğİ’è¨Às
+    call s:ScreenLineJump(scline, 0)
+    silent! execute 'normal! ' . curline . 'G'
   endif
-endfunction
-function! s:JumpPrev()
 endfunction
 
 "------------------------------------------------------------------------------
@@ -1322,8 +1469,8 @@ function! s:DoWriteBuffer(flag)
 
   if !s:opened_write
     if !newthread
-      call s:GoBuf_Thread()
-      normal! zb
+      "call s:GoBuf_Thread()
+      "normal! zb
     else
       " VƒXƒŒì¬(Œ»İ‚Íg‚í‚ê‚È‚¢)
       call s:GoBuf_ThreadList()
@@ -1510,6 +1657,129 @@ function! s:DoWriteBufferStub(flag)
 endfunction
 
 "------------------------------------------------------------------------------
+" FILENAMES
+" ƒtƒ@ƒCƒ‹–¼‚Ì¶¬
+
+function s:GenerateLocalDat(host, board, dat)
+  return s:dir_cache . 'dat_' . a:host . substitute(a:board, '/', '_', 'g') . '_' . substitute(a:dat, '\.dat$', '', '')
+endfunction
+
+function s:GenerateLocalSubject(host, board)
+  return s:dir_cache . 'subject_' . a:host . substitute(a:board, '/', '_', 'g')
+endfunction
+
+"------------------------------------------------------------------------------
+" FORMATTING
+" ŠeƒyƒCƒ“‚Ì®Œ`
+
+"
+" endline‚É0‚ğw’è‚·‚é‚Æƒoƒbƒtƒ@‚ÌÅŒãB
+"
+function! s:FormatThreadInfo(startline, endline)
+  call s:GoBuf_ThreadList()
+  " ƒoƒbƒtƒ@‚ªƒXƒŒˆê——‚Å‚Í‚È‚©‚Á‚½ê‡A‘¦I—¹
+  if b:host == '' || b:board == ''
+    return
+  endif
+
+  let i = a:startline
+  let lastline = a:endline ? a:endline : line('$')
+  let @a = 'i='.i.' lastline='.lastline
+
+  " ŠeƒXƒŒ‚Ìdatƒtƒ@ƒCƒ‹‚ª‘¶İ‚·‚é‚©ƒ`ƒFƒbƒN‚µA‘¶İ‚·‚éê‡‚É‚ÍÅIæ“¾
+  " ‚ğƒ`ƒFƒbƒN‚µA‚»‚ê‚É‚æ‚Á‚Ä‹­’²‚Ìd•û‚ğ•Ï‚¦‚éB
+  " 1. dat‚ª‘¶İ‚µ‰ß‹chalice_threadinfo_expire“à‚ÉXV ¨!‚ğs“ª‚Ö
+  " 2. dat‚ª‘¶İ‚µ‰ß‹chalice_threadinfo_expireŠO‚ÉXV ¨+‚ğs“ª‚Ö
+  while i <= lastline
+    let curline = getline(i)
+    if curline =~ s:mx_thread_dat
+      let dat = substitute(curline, s:mx_thread_dat, '\3', '')
+      let local = s:GenerateLocalDat(b:host, b:board, dat)
+      " ƒtƒ@ƒCƒ‹‚ª‘¶İ‚·‚é‚È‚ç‚Îƒtƒ@ƒCƒ‹î•ñ‚ğæ“¾
+      if filereadable(local)
+	let lasttime = getftime(local)
+	let indicator = localtime() - lasttime > g:chalice_threadinfo_expire ? '+' : '!'
+	let time = strftime("%Y/%m/%d %H:%M:%S", lasttime)
+      else
+	let indicator = ' '
+	let time = ''
+      endif
+      " ƒ^ƒCƒgƒ‹‚Æ‘‚«‚İ”‚ğæ“¾
+      let title = substitute(curline, s:mx_thread_dat, '\1', '')
+      let point = substitute(curline, s:mx_thread_dat, '\2', '')
+      " ƒ‰ƒCƒ“‚Ì“à—e‚ª•Ï‰»‚µ‚Ä‚¢‚½‚çİ’è
+      let newline = indicator . ' ' . title . ' (' . point . ') ' . time . "\t\t\t\t" . dat
+      if curline !=# newline
+	call setline(i, newline)
+      endif
+    endif
+    let i = i + 1
+  endwhile
+endfunction
+
+function! s:FormatBoard()
+  " ƒXƒŒƒf[ƒ^(.dat)‚Å‚Í‚È‚¢s‚ğíœ
+  silent! execute '%g!/^\d\+\.dat/delete _'
+  " .dat–¼‚ğ‰B•Á
+  silent! execute '%s/^\(\d\+\.dat\)<>\(.*\)$/  \2\t\t\t\t\1'
+  " “Áê•¶š’×‚µ
+  silent! execute '%s/&amp;/\&/g'
+  silent! execute '%s/&gt;/>/g'
+  silent! execute '%s/&lt;/</g'
+
+  if g:chalice_threadinfo
+    call s:FormatThreadInfo(1, 0)
+  endif
+endfunction
+
+function! s:FormatThread()
+  " ‘Ò‚Á‚Ä‚Ë™ƒƒbƒZ[ƒW
+  call s:EchoH('WarningMsg', s:msg_wait_threadformat)
+
+  " Še‘‚«‚İ‚É”Ô†‚ğU‚é
+  let i = 1
+  let endline = line('$')
+  while i <= endline
+    call setline(i, i . '<>' . getline(i))
+    let i = i + 1
+  endwhile
+
+  " ‘‚«‚İî•ñ‚ÌØ‚è•ª‚¯
+  "   ƒXƒŒ‚Ìdat‚ÌƒtƒH[ƒ}ƒbƒg‚ÍA’¼‘O‚És“ª‚És(‹L–)”Ô†‚ğ•t‚¯‚Ä‚¢‚é‚Ì‚Å:
+  "	”Ô†<>–¼‘O<>ƒ[ƒ‹<>ŠÔ<>–{•¶<>ƒXƒŒ–¼
+  "   ‚Æ‚È‚éBƒXƒŒ–¼‚Íæ“ª‚Ì‚İ
+  if 1
+    " ‘¬‚¢‚ªƒXƒ^ƒbƒNƒGƒ‰[‚Å—‚¿‚é‰Â”\«‚ª‚ ‚éB”n‚ÌŒ•B
+    " ‚»‚ê‚Å‚à—‚¿‚é‚±‚Æ‚Í­‚È‚­‚È‚Á‚½‚Í‚¸‚¾‚ªc
+    let m1 = '\(\%([^<]\|<[^<>]\)*\)<>' " (<>‚ğŠÜ‚Ü‚È‚¢•¶š—ñ)<> ‚Éƒ}ƒbƒ`
+    let m2 = '\(.*\)<>'
+    let mx = '^\(\d\+\)<>' .m1.m1.m1.m2. '\(.*\)$'
+  else
+    " ’x‚¢‚ªƒXƒ^ƒbƒNƒGƒ‰[‚Å‚Í—‚¿‚È‚¢
+    let mx = '^\(\d\+\)<>\(.*\)<>\(.*\)<>\(.*\)<>\(.*\)<>\(.*\)$'
+  endif
+  let out = '\r--------\r\1  From:\2  Date:\4  Mail:\3\r  \5'
+  silent! execute '%s/\s*<>\s*/<>/g'
+  silent! execute '%s/' . mx . '/' . out
+  " –{•¶‚Ì‰üsˆ—
+  silent! execute '%s/\s*<br>\s*/\r  /g'
+
+  " <A>ƒ^ƒOÁ‚µ
+  silent! execute '%s/<\/\?a[^>]*>//g'
+  " ŒÂlƒLƒƒƒbƒv‚Ì<b>ƒ^ƒOÁ‚µ
+  silent! execute '%s/\s*<\/\?b>//g'
+  " “Áê•¶š’×‚µ
+  silent! execute '%s/&amp;/\&/g'
+  silent! execute '%s/&gt;/>/g'
+  silent! execute '%s/&lt;/</g'
+  silent! execute '%s/&quot;/"/g'
+  silent! execute '%s/&nbsp;/ /g'
+
+  " ƒSƒ~sÁ‹
+  normal! gg"_dd
+endfunction
+
+"------------------------------------------------------------------------------
 " COMMAND REGISTER
 " ƒRƒ}ƒ“ƒh“o˜^ƒ‹[ƒ`ƒ“
 "   “®“I‚É“o˜^‰Â”\‚ÈƒRƒ}ƒ“ƒh‚Í“®“I‚É“o˜^‚·‚é
@@ -1521,6 +1791,7 @@ function! s:CommandRegister()
   command! ChaliceGoBoardList		call <SID>GoBuf_BoardList()
   command! ChaliceGoThreadList		call <SID>GoBuf_ThreadList()
   command! ChaliceGoThread		call <SID>GoBuf_Thread()
+  command! -nargs=1 ChaliceGoArticle	call <SID>GoThread_Article(<q-args>)
   command! -nargs=? ChaliceOpenBoard	call <SID>OpenBoard(<f-args>)
   command! -nargs=? ChaliceOpenThread	call <SID>OpenThread(<f-args>)
   command! ChaliceHandleJump		call <SID>HandleJump('internal')
@@ -1537,6 +1808,7 @@ function! s:CommandRegister()
   command! ChaliceJumplist		call <SID>JumplistDump()
   command! ChaliceJumplistNext		call <SID>DoHistoryJump('next')
   command! ChaliceJumplistPrev		call <SID>DoHistoryJump('prev')
+  command! ChaliceDeleteThreadDat	call <SID>DeleteThreadDat()
 endfunction
 
 function! s:CommandUnregister()
@@ -1545,6 +1817,7 @@ function! s:CommandUnregister()
   delcommand ChaliceGoBoardList
   delcommand ChaliceGoThreadList
   delcommand ChaliceGoThread
+  delcommand ChaliceGoArticle
   delcommand ChaliceOpenBoard
   delcommand ChaliceOpenThread
   delcommand ChaliceHandleJump
@@ -1560,4 +1833,5 @@ function! s:CommandUnregister()
   delcommand ChaliceJumplist
   delcommand ChaliceJumplistNext
   delcommand ChaliceJumplistPrev
+  delcommand ChaliceDeleteThreadDat
 endfunction

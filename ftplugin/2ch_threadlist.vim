@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 25-Nov-2001.
+" Last Change: 28-Nov-2001.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -32,6 +32,7 @@ nnoremap <silent> <buffer> <CR>		:ChaliceOpenThread<CR>
 nnoremap <silent> <buffer> <S-CR>	:ChaliceOpenThread external<CR>
 nnoremap <silent> <buffer> <C-CR>	:ChaliceOpenThread firstline<CR>
 nnoremap <silent> <buffer> R		:ChaliceReloadThreadList<CR>
+nnoremap <silent> <buffer> d		:ChaliceDeleteThreadDat<CR>
 nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd threadlist<CR>
 
 "nnoremap <silent> <buffer> i		:ChaliceWrite new<CR>
@@ -40,5 +41,8 @@ nnoremap <silent> <buffer> ~		:ChaliceBookmarkAdd threadlist<CR>
 "nnoremap <silent> <buffer> A		:ChaliceWrite new,anony,sage<CR>
 
 nnoremap <buffer> <2-LeftMouse>		:ChaliceOpenThread<CR>
+
+nnoremap <buffer> <C-f>			<C-f>0
+nnoremap <buffer> <C-b>			<C-b>0
 
 setlocal foldmethod=manual

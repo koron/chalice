@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 23-Nov-2001.
+" Last Change: 28-Nov-2001.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -25,6 +25,8 @@ nnoremap <silent> <buffer> h		zc
 "nunmap <buffer> a
 "nunmap <buffer> A
 nunmap <buffer> ~
+nunmap <buffer> d
+nunmap <buffer> p
 
 "
 " foldingê›íË

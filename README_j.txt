@@ -2,12 +2,15 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
                                                              since 16-Nov-2001
                                                                    Version 1.0
                                                          Muraoka Taoro (KoRoN)
-                                                     Last Change: 25-Nov-2001.
+                                                     Last Change: 27-Dec-2001.
 
 説明
   Vim上で2ちゃんねるの掲示板を閲覧するためのプラグインです。Vimさえ動くのであ
   ればどのOSでも同じように操作することができます。Chaliceは「片手でキーボード
   のみで使える」ことを基本設計方針にしています。
+
+  # 以下の文中ではVim,vim,gvim等など、幾つか違った表記が現れますがどれも同じ
+  # Vimとして考えてください。
   
   ChaliceはcURLを使用してスレデータを取得しています。cURLを持ってない方は別途
   入手してください。Windowsでは下記のcurl.exeバイナリをダウンロードします。
@@ -53,12 +56,12 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
        に変更し、gvim.exeと同じディレクトリに置いたとします。
     2. curl.exeを環境変数PATHのどこかにコピーしてください。
        よくわからない場合はgvim.exeと同じディレクトリで良いです。
-    3. $HOME/chaliceとして置いたならばvimを起動して次のようにタイプします。
-       :set runtimepath+=$HOME/chalice
+    3. vimを起動して次のようにタイプします。
+       :set runtimepath+=$VIM/chalice
        :runtime plugin/chalice.vim
        :Chalice
     4. 必要ならば個人設定ファイル _vimrc に
-         set runtimepath+=$HOME/chalice
+         set runtimepath+=$VIM/chalice
        と記述しておけばVimを起動した後
          :Chalice
        とタイプするだけでプラグインが起動します。
@@ -67,12 +70,12 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
     インストールスクリプトを作成しました。以下のようにインストール可能です。
       > su ; sh ./install.sh
     $VIMRUNTIMEらしいところにvimfilesを作って必要なファイルをコピーしているだ
-    けです。
+    けです。その他にcURLとqkcもしくはnkfのインストールを忘れないで下さい。
 
   (UNIX手動インストール)
-    基本的に(Windows 普通のインストール)と同じ方法でインストールが可
-    能です。ただしcURLのインストールと、及びqkcもしくはnkf(qkc推奨)のインス
-    トールを忘れないで下さい。
+    基本的に(Windows 普通のインストール)と同じ方法でインストールが可能です。た
+    だしcURLのインストールと、及びqkcもしくはnkf(qkc推奨)のインストールを忘れ
+    ないで下さい。
 
   (Mac OS X お手軽インストール)
     解凍してでてきたディレクトリ chalice-{バージョン名} を vimfiles に変更し、
@@ -85,13 +88,13 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   (Mac OS X 普通のインストール)
     1. 解凍して出来たディレクトリを適当な場所に置きます。
        ここでは説明のために chalice-{バージョン名} というディレクトリをchalice
-       に変更し、Vim実行ファイルと同じディレクトリに置いたとします。
-    2. $HOME/chaliceとして置いたならばvimを起動して次のようにタイプします。
-       :set runtimepath+=$HOME/chalice
+       に変更し、Vimのアイコンと同じディレクトリに置いたとします。
+    2. vimを起動して次のようにタイプします。
+       :set runtimepath+=$VIM/chalice
        :runtime plugin/chalice.vim
        :Chalice
-    3. 必要ならば個人設定ファイル $HOME/_vimrc に
-         set runtimepath+=$HOME/chalice
+    3. 必要ならば個人設定ファイル $VIM/_vimrc に
+         set runtimepath+=$VIM/chalice
        と記述しておけばVimを起動した後
          :Chalice
        とタイプするだけでプラグインが起動します。
@@ -110,7 +113,7 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   - (全共通)    m       スレッドへ移動
   - (全共通)    M       スレッドへ移動(+栞の起動トグル)
   - (全共通)    <C-A>   スレの栞(ブックマーク)の起動・終了トグル
-  - (全共通)    <Space> 1画面スクロールダウン(<S-Space>でアップ)
+  - (全共通)    <Space> 1画面スクロールダウン(<S-Space>及びpでアップ)
   - (全共通)    <C-N>   クリップボードのURLをChaliceで開く
 
   - (板一覧)    j,k     カテゴリ・板の選択(カーソル移動による)
@@ -119,6 +122,7 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   - (板一覧)    <S-CR>  板を外部ブラウザで開く
 
   - (スレ一覧)  j,k     スレを選択(カーソル移動による)
+  - (スレ一覧)  d       スレのキャッシュdatを(存在すれば)削除
   - (スレ一覧)  <CR>    閲覧するスレの決定(<C-CR>で先頭から)
   - (スレ一覧)  <S-CR>  スレを外部ブラウザで開く
   - (スレ一覧)  ~       カーソル行のスレを栞に登録
@@ -138,6 +142,11 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   - (スレの栞)  h,l     カテゴリfoldを閉じる(h)・開く(l)
   - (スレの栞)  <CR>    カテゴリfold開閉・閲覧するスレの決定
 
+  スレ一覧では一度でも読んだことのある(ローカルにdatファイルが存在する)スレに
+  印が付きます。印には ! と + の2種類があり、! は過去chalice_threadinfo_expire
+  秒以内にローカルのdatファイルが更新されたものを、+ は更新されていないものを
+  意味します。
+
   スレの栞はテキストファイルのように編集可能です。カテゴリを作成するには先頭が
   「■」で始まる行を書きます。栞の内容は閉じるたびに自動的にファイルへ保存され
   ます。保存ファイルを知るには次のコマンドを使ってください。
@@ -156,7 +165,7 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   - (folding)   zr      全fold展開
   - (folding)   zm      全fold閉鎖
 
-便利な設定・裏技
+便利な設定・裏技 (+ は1.0以降に追加/変更のあった項目)
   ゆかいな設定変数たち
   - chalice_username                    書き込み時に自動入力するユーザ名
     例:   let chalice_username = 'KoRoN@Vim%Chalice'
@@ -166,6 +175,10 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
 
   - chalice_usermail                    書き込み時に自動入力するメールアドレス
     例:   let chalice_usermail = 'koron@tka.att.ne.jp'
+
+  - chalice_columns                     Chalice起動時の'columns'を設定
+    例:   let chalice_columns = 160
+    (解説)Chalice起動時に'columns'を160に設定する。
 
   - chalice_bookmark                    ブックマークファイルを記憶
     例:   echo chalice_bookmark
@@ -188,7 +201,16 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
     例:   let chalice_reloadinterval_boardlist = 604800
 
   - chalice_reloadinterval_threadlist   スレ一覧のリロード間隔(秒)
-    例:   let chalice_reloadinterval_threadlist = 3600
+    例:   let chalice_reloadinterval_threadlist = 0
+    (解説)スレ一覧の取得間隔を0秒(常に更新)にする。
+
+  + chalice_threadinfo		        鮮度表示機能フラグ
+    例:   let chalice_threadinfo = 0
+    (解説)スレのdatファイルの存在・更新状況の表示機能を無効にする。
+
+  + chalice_threadinfo_expire		鮮度保持期間(秒)
+    例:   let chalice_threadinfo_expire = 7200
+    (解説)既読かつ2時間以上更新されていないスレを強調表示する。
 
   - chalice_gzip                        gzip圧縮の有無効フラグ
     例:   let chalice_gzip = 0
@@ -207,9 +229,11 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   - 'A'で書き込みモードに入ると強制的に「名無し」「sage」に
   - 実は"y"だけでも書き込める
   - :ChaliceJumplistでジャンプの履歴を参照可
+  - :ChaliceGoArticle 番号で指定された記事番号へジャンプ
 
 問題点
   解決する意思はある(上にあるものほど優先順位が高いかも)
+  - URL中のlによる部分的な表示に未対応
   - 古い書き込みのfolding等ができない…仕様が固まればやる
 
   こっちは仕様(仕方ないとか、要らないとか)
@@ -239,21 +263,42 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
   - 村岡のemailアドレス
     koron@tka.att.ne.jp
 
+  - 2ch/ソフトウェア板/2ch閲覧プラグイン～Chalice fro Vim
+    http://pc.2ch.net/test/read.cgi/software/1006852780/l50
   - 2ch/Unix板/◆Vim6 2
     http://pc.2ch.net/test/read.cgi/unix/1006246205/l50
-  - 2ch/Unix板/vim6スレ
-    http://pc.2ch.net/test/read.cgi/unix/990764339/l50
 
 謝辞
-  - 8頭身
-  - iPod/OS Xを世に送り出したAppleスタッフ
-  - vim6スレの住人さん達
-  - cURLに関わっている人
+  - Chalice/vim6スレの住人さん達
   - ハートに火を点けてくれた「まっつん」こと松本さん
   - そしてVimの作者Bram Moolenaar氏
   以上の方々に感謝。
 
 更新履歴
+  ● 27-Dec-2001 (1.1 正式版)
+    BBSMENUのフォーマット方法を見直し(Rでリロード)
+    ドキュメント更新
+    'chalice_columns'を追加
+  ● 19-Dec-2001 (1.1a-beta)
+    スレッドにfoldcolumn=1を指定
+    URLによるレンジ指定(100-123の形式)に対応(using fold)
+    URLのエスケープがNT系でしか有効でなかったのを修正
+    URLを外部ブラウザで開く前に#をエスケープ(バッファ名への展開を抑制)
+    2ch URLでジャンプした時にジャンプ元をヒストリに記憶
+    compress GET時に、proxyオプションととかが無効になってしまう件の修正
+    URLを外部ブラウザで開く前に%をエスケープ(バッファ名への展開を抑制)
+    スレdatの消去機能/情報表示更新を追加
+    マニュアル表記修正
+    書き込みバッファシンタックスのURL構成文字に","を追加
+    スレのdatの増分の位置から表示するように変更(UNIXでは正常動作しないかも)
+    板リロードタイムのデフォルトを30分に変更
+    スレ一覧にスレdatファイル情報を表示(これって既読/未読情報?)
+    'p'にバックスクロール(栞/書き込み以外)
+    起動時に'scrolloff'を0にする
+    ジャンプ履歴をスクリーンベースにして賢くなるよう改良
+    ジャンプ履歴にスレタイトル(コメント)項目を追加
+    NT/2KでURLに&を含む場合のワークアラウンドを追加
+
   ● 25-Nov-2001 (1.0 正式版)
     <Tab>のバッファ変更を<C-Tab> (人によってこれは痛いかも)
     独自のジャンプリストを作成(ジャンプ先がChaliceから外れて死亡、を回避)

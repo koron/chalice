@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 25-Nov-2001.
+" Last Change: 26-Nov-2001.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 setlocal buftype=nofile bufhidden=delete 
@@ -27,5 +27,6 @@ nnoremap <silent> <buffer> <C-N>	:ChaliceHandleURL <C-R>+<CR>
 
 nnoremap <silent> <buffer> <Space>	<C-f>0
 nnoremap <silent> <buffer> <S-Space>	<C-b>0
+nnoremap <silent> <buffer> p		<C-b>0
 nnoremap <silent> <buffer> <C-I>	<Nop>
 nnoremap <silent> <buffer> <C-O>	<Nop>

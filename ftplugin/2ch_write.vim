@@ -2,7 +2,7 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 24-Nov-2001.
+" Last Change: 26-Nov-2001.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -32,3 +32,4 @@ nunmap <buffer> U
 nunmap <buffer> M
 nunmap <buffer> <Space>
 nunmap <buffer> <S-Space>
+nunmap <buffer> p

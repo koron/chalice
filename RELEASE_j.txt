@@ -1,18 +1,12 @@
-2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.0を公開します。開発
-開始より約10日。急造ながら各種OS(Windows/Mac OS X/UNIX)で動く優れものに仕上
-がりました。
+2ちゃんねる閲覧プラグイン「Chalice for Vim」のVersoin 1.1を公開します。1.x系
+列は1.0のマイナーアップデートバージョンであり、大きな変更点はありません。
 
 - Chalice for Vim
 　http://www.kaoriya.net/#CHALICE
 
-主な特徴は以下のとおりです。その他、詳細はアーカイブに同梱のREADME_j.txtを参
-照してください。
-
-　- Vimの操作性を継承
-　- 片手(キーボード)で閲覧可能
-　- マルチプラットホーム対応
-　- スレの栞(ブックマーク)装備
-　- gzip圧縮転送対応
+アップデートに関する詳細はアーカイブに同梱のREADME_j.txtを参照してください。
+同梱のTODO.txtは次期メジャーアップデートになる予定の2.0向けのTODOですので気
+にしないで下さい。
 
 ChaliceはテキストエディタVimのVersion 6以降のプラグインとして動作します。Vim
 の情報・入手については下記のURLを参照してください。Windows版とMac OS X版のバ
@@ -22,8 +16,8 @@ ChaliceはテキストエディタVimのVersion 6以降のプラグインとして動作します。Vim
 　http://www.kaoriya.net/#VIM
 
 - Vim関連資料
-  http://www.vim.org/
-  http://vim.sourceforge.net/
+　http://www.vim.org/
+　http://vim.sourceforge.net/
 
 ChaliceはcURLを使用してスレデータを取得しています。cURLを持ってない方は別途
 入手してください。Windowsでは下記のcurl.exeバイナリをダウンロードします。
