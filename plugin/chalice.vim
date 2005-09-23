@@ -2,7 +2,6 @@
 "
 " chalice.vim - 2ch viewer 'Chalice' /
 "
-" Last Change: 21-Feb-2005.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
@@ -361,8 +360,8 @@ let s:encoding = 'cp932'
 let s:host = 'www.2ch.net'
 let s:remote = '2ch.html'
 " 2chのメニュー取得用初期データ
-let s:menu_host = 'www6.ocn.ne.jp'
-let s:menu_remotepath = '~mirv/2chmenu.html'
+let s:menu_host = 'menu.2ch.net'
+let s:menu_remotepath = 'bbsmenu.html'
 let s:menu_localpath = 'bbsmenu'
 " ウィンドウ識別子
 let s:buftitle_boardlist  = 'Chalice_2ちゃんねる_板一覧'

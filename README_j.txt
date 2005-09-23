@@ -2,7 +2,7 @@ Chalice ～2ちゃんねる閲覧プラグイン for Vim～ 取扱説明書
                                                             Since: 16-Nov-2001
                                                                   Version: 1.9
                                                  Author: MURAOKA Taoro (KoRoN)
-                                                     Last Change: 05-Mar-2005.
+                                                     Last Change: 23-Sep-2005.
 
 概要
   Vim上で2ちゃんねるの掲示板を閲覧するためのプラグインです。Vimさえ動くのであ
@@ -253,7 +253,8 @@ Subversion利用について
   以上の方々に感謝いたします。
 
 更新履歴
-● 05-Mar-2005 (trunk)
+● 23-Sep-2005 (trunk)
+  デフォルトのメニューURLを修正
   Vim依存バージョンを修正
   GET時のIf-Modified-Sinceを復活
 ● 20-Jan-2005 (1.9正式版)
