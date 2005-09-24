@@ -295,6 +295,7 @@ let s:msg_warn_bookmark = '栞は閉じる時に自動的に保存されます.'
 let s:msg_warn_bmkcancel = '栞への登録はキャンセルされました.'
 let s:msg_warn_dontusetoomuch = '利用し過ぎに注意シル!!'
 let s:msg_warn_datdirtoolsuccess = 'DATDIR形式への移行が完了しました.'
+let s:msg_warn_boardmoved = '板が移動した可能性があります.'
 let s:msg_wait_threadformat = '貴様ら!! スレッド整形中のため、しばらくお待ちください...'
 let s:msg_wait_download = 'ダウンロード中...'
 let s:msg_wait_login = 'ログイン中...'
@@ -694,6 +695,8 @@ function! s:Cruise(flags)
 	    call s:EchoH('Error', s:msg_thread_lost)
 	  elseif retval == -2
 	    call s:EchoH('Error', s:msg_thread_dead)
+	  elseif s:IsBoardMoved(s:parseurl_board, s:parseurl_host)
+	    call s:EchoH('Error', s:msg_warn_boardmoved)
 	  else
 	    if AL_hasflag(a:flags, 'semiauto')
 	      call s:EchoH('', s:msg_thread_nonewwait)
@@ -1275,6 +1278,7 @@ function! s:UpdateThread(title, host, board, dat, flags)
     let b:host = host
     let b:board = board
     let b:dat = dat
+    call s:IsBoardMoved(board, host)
   endif
   " 整形作業
   if AL_hasflag(a:flags, 'ignorecache')
@@ -1387,6 +1391,30 @@ function! s:Reformat(target)
     let s:dont_download = save_dont_download
   else
   endif
+endfunction
+
+let s:last_movechecked_board = ""
+let s:last_movechecked_host = ""
+
+" 指定された板が移転した可能性があるかをチェックする。
+"   移転した可能性がある場合は1、なければ0を返す
+function! s:IsBoardMoved(board, host)
+  if a:board != s:last_movechecked_board || s:last_movechecked_host == ""
+    let curhost = ""
+    " 板一覧から該当するURLを探し出して、ホスト部分を取得(curhost)する
+    let oldbuf = bufname('%')
+    call s:GoBuf_BoardList()
+    let mx = '\mhttp://\([^/]*\)' . a:board . '/'
+    let nr = search(mx, "w")
+    if nr > 0
+      let curhost = AL_sscan(getline(nr), mx, '\1')
+    endif
+    call AL_selectwindow(oldbuf)
+    " 同じ板のホストを連続で検索するのを避けるためのキャッシュ
+    let s:last_movechecked_board = a:board
+    let s:last_movechecked_host = curhost
+  endif
+  return a:host != s:last_movechecked_host ? 1 : 0
 endfunction
 
 "}}}
@@ -2130,11 +2158,24 @@ endfunction
 function! s:GetDatStatus()
   if exists('b:host') && exists('b:board') && exists('b:dat')
     if b:host != '' && b:board != '' && b:dat != ''
-      let dat  = s:GenerateLocalDat(b:host, b:board, b:dat)
-      let kako = s:GenerateLocalKako(b:host, b:board, b:dat)
-      return '['.(filereadable(dat) ? 'D' : '-').(filereadable(kako) ? 'K' : '-').']'
+      if filereadable(s:GenerateLocalDat(b:host, b:board, b:dat))
+	let dat = 'D'
+      else
+	let dat = '-'
+      endif
+      if filereadable(s:GenerateLocalKako(b:host, b:board, b:dat))
+	let kako = 'K'
+      else
+	let kako = '-'
+      endif
+      if s:last_movechecked_host != '' && s:last_movechecked_host != b:host
+	let moved = 'M'
+      else
+	let moved = '-'
+      endif
+      return "[" . dat . kako . moved . "]"
     else
-      return '[--]'
+      return '[---]'
     endif
   else
     return ''
@@ -3697,6 +3738,7 @@ function! s:GenerateRemoteDat(host, board, dat)
   endif
 endfunction
 
+" ローカルDATのパスを生成する
 function! s:GenerateLocalDat(host, board, dat)
   if s:datdir_enabled
     return s:GetPath_Datdir_Dat(a:host, a:board, a:dat)
