@@ -1393,13 +1393,11 @@ function! s:Reformat(target)
   endif
 endfunction
 
-let s:last_movechecked_board = ""
-let s:last_movechecked_host = ""
-
 " 指定された板が移転した可能性があるかをチェックする。
 "   移転した可能性がある場合は1、なければ0を返す
 function! s:IsBoardMoved(board, host)
-  if a:board != s:last_movechecked_board || s:last_movechecked_host == ""
+  let bid = substitute(a:board, '^/', '', '')
+  if !exists('s:movechecked_' . bid) || s:movechecked_{bid} == ""
     let curhost = ""
     " 板一覧から該当するURLを探し出して、ホスト部分を取得(curhost)する
     let oldbuf = bufname('%')
@@ -1410,11 +1408,9 @@ function! s:IsBoardMoved(board, host)
       let curhost = AL_sscan(getline(nr), mx, '\1')
     endif
     call AL_selectwindow(oldbuf)
-    " 同じ板のホストを連続で検索するのを避けるためのキャッシュ
-    let s:last_movechecked_board = a:board
-    let s:last_movechecked_host = curhost
+    let s:movechecked_{bid} = curhost
   endif
-  return a:host != s:last_movechecked_host ? 1 : 0
+  return a:host != s:movechecked_{bid} ? 1 : 0
 endfunction
 
 "}}}
@@ -2168,7 +2164,8 @@ function! s:GetDatStatus()
       else
 	let kako = '-'
       endif
-      if s:last_movechecked_host != '' && s:last_movechecked_host != b:host
+      let bid = substitute(b:board, '^/', '', '')
+      if exists('s:movechecked_' . bid) && s:movechecked_{bid} != b:host
 	let moved = 'M'
       else
 	let moved = '-'
