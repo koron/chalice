@@ -2,7 +2,7 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 08-Nov-2004.
+" Last Change: 16-Nov-2005.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 let s:version_serial = 134
@@ -259,6 +259,9 @@ function! s:Utf_nr2byte(nr)
 endfunction
 
 function! s:Uni_nr2enc_char(charcode)
+  if &encoding == 'utf-8'
+    return nr2char(a:charcode)
+  endif
   let char = s:Utf_nr2byte(a:charcode)
   if has('iconv') && strlen(char) > 1
     let char = strtrans(iconv(char, 'utf-8', &encoding))
