@@ -2,10 +2,10 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 16-Nov-2005.
+" Last Change: 20-Nov-2005.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
-let s:version_serial = 134
+let s:version_serial = 135
 let s:name = 'alice'
 if exists('g:plugin_'.s:name.'_disable') || (exists('g:version_'.s:name) && g:version_{s:name} > s:version_serial)
   finish
@@ -231,6 +231,11 @@ function! s:AL_verifyurl(str)
   let retval = substitute(retval, '[ $~]', '\=AL_urlencoder_ch2hex(submatch(0))', 'g')
   "let retval = substitute(retval, ' ', '+', 'g')
   return retval
+endfunction
+
+function! AL_urlencode_with_range(range)
+  call AL_execute(a:range . 's/[^- *.0-9A-Za-z]/\=AL_urlencoder_ch2hex(submatch(0))/g')
+  call AL_execute(a:range . 's/ /+/g')
 endfunction
 
 function! AL_urlencode(str)
@@ -558,6 +563,32 @@ function! AL_delete(path)
     call AL_system('rm -fr '.path)
   endif
   return glob(a:path).'X' ==# 'X' ? 1 : 0
+endfunction
+
+function! AL_copy(from, to)
+  if isdirectory(a:from) 
+    " Copy a directory.
+    if has('win95') && &shell =~# '\m\ccommand\.com'
+      call AL_system('xcopy ' . a:from . ' ' . a:to . ' /S /E /C /Q /R /X /Y ')
+    elseif has('win32') && &shell =~# '\m\ccmd\.exe'
+      call AL_system('xcopy ' . a:from . ' ' . a:to . ' /S /E /C /Q /R /X /Y ')
+    else
+      call AL_system('cp -Rp ' . a:from . ' ' . a:to)
+    endif
+    return 1
+  elseif filereadable(a:from)
+    " Copy a file.
+    if has('win95') && &shell =~# '\m\ccommand\.com'
+      call AL_system('copy /Y ' . a:from . ' ' . a:to)
+    elseif has('win32') && &shell =~# '\m\ccmd\.exe'
+      call AL_system('copy /Y ' . a:from . ' ' . a:to)
+    else
+      call AL_system('cp ' . a:from . ' ' . a:to)
+    endif
+    return 1
+  else
+    return 0
+  endif
 endfunction
 
 "}}}
