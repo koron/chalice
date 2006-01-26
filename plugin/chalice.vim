@@ -280,12 +280,14 @@ let s:label_board = '[板]'
 let s:label_board_escaped = escape(s:label_board, '[]')
 let s:label_localabone = 'Chalice,aboned,ローカルあぼーん'
 " メッセージ
-let s:msg_confirm_appendwrite_yn = 'バッファの内容が書き込み可能です. 書き込みますか?(yes/no): '
-let s:msg_confirm_appendwrite_ync = '本当に書き込みますか?(yes/no/cancel): '
-let s:msg_confirm_replacebookmark = 'ガイシュツURLです. 置き換えますか?(yes/no/cancel): '
-let s:msg_confirm_quit = '本当にChaliceを終了しますか?(yes/no): '
+let s:choice_yn = "&Yes\n&No"
+let s:choice_ync = "&Yes\n&No\n&Cancel"
+let s:choice_rac = "&Replace\n&Append\n&Cancel"
+let s:msg_confirm_appendwrite_yn = 'バッファの内容が書き込み可能です. 書き込みますか?'
+let s:msg_confirm_appendwrite_ync = '本当に書き込みますか?'
+let s:msg_confirm_replacebookmark = 'ガイシュツURLです. 置き換えますか?'
+let s:msg_confirm_quit = '本当にChaliceを終了しますか?'
 let s:msg_prompt_articlenumber = '何番、逝ってよし? '
-let s:msg_prompt_pressenter = '続けるには Enter を押してください.'
 let s:msg_warn_preview_on = 'プレビュー機能を有効化しました'
 let s:msg_warn_preview_off = 'プレビュー機能を解除しました'
 let s:msg_warn_netline_on = 'オフラインモードを解除しました'
@@ -1523,10 +1525,7 @@ function! s:ChaliceClose(flag)
   endif
   " 必要ならば終了の意思を確認する
   if !g:chalice_noquery_quit && !AL_hasflag(a:flag, 'all')
-    echohl Question
-    let last_confirm = input(s:msg_confirm_quit)
-    echohl None
-    if last_confirm !~ '^\cy'
+    if confirm(s:msg_confirm_quit, s:choice_yn, 2, "Question") == 2
       return
     endif
   endif
@@ -2467,7 +2466,7 @@ function! s:GetLnum_Article(num)
   else
     " 入力する方法もあり
     if anumstr ==# 'input'
-      let target = input(s:msg_prompt_articlenumber)
+      let target = inputdialog(s:msg_prompt_articlenumber)
     else
       let target = a:num + 0
     endif
@@ -2985,16 +2984,17 @@ function! s:AddBookmark(title, url)
     endif
     normal! 0zz
     " 問い合わせ
-    echohl Question
     call s:HighlightWholeline(existedbookmark, 'Search')
     call s:Redraw('force')
-    let last_confirm = input(s:msg_confirm_replacebookmark)
+    let last_confirm = confirm(s:msg_confirm_replacebookmark, s:choice_rac, 3, "Question")
     match none
     call s:Redraw('force')
-    echohl None
-    if last_confirm =~ '^\cy'
+    if last_confirm == 1
+      " 置き換え
       call AL_execute(':' . existedbookmark . 'delete _')
-    elseif last_confirm !~ '^\cn'
+    elseif last_confirm == 2
+      " 強制追加
+    elseif last_confirm == 3
       " 登録をキャンセル
       let url = ''
     endif
@@ -3301,12 +3301,7 @@ function! s:DoWriteBufferStub(flag)
   let mail = getline(3)
   let sep = getline(4)
   if title !~ '^Title:\s*' || name !~ '^From:\s*' || mail !~ '^Mail:\s*' || sep != '--------'
-    call s:EchoH('ErrorMsg', s:msg_error_writebufhead)
-    if force_close
-      echohl MoreMsg
-      call input(s:msg_prompt_pressenter)
-      echohl None
-    endif
+    call confirm(s:msg_error_writebufhead, "", 1, "Error")
     return 0
   endif
   let title = AL_chompex(substitute(title,  '^Title:', '', ''))
@@ -3315,12 +3310,7 @@ function! s:DoWriteBufferStub(flag)
 
   " 新スレ作成時にタイトルを設定したか確認
   if newthread && title == ''
-    call s:EchoH('ErrorMsg', s:msg_error_writetitle)
-    if force_close
-      echohl MoreMsg
-      call input(s:msg_prompt_pressenter)
-      echohl None
-    endif
+    call confirm(s:msg_error_writetitle, "", 1, "Error")
     return 0
   endif
 
@@ -3345,12 +3335,7 @@ function! s:DoWriteBufferStub(flag)
 
   " 本文があるかをチェック
   if line('$') < 5
-    call s:EchoH('ErrorMsg', s:msg_error_writebufbody)
-    if force_close
-      echohl MoreMsg
-      call input(s:msg_prompt_pressenter)
-      echohl None
-    endif
+    call confirm(s:msg_error_writebufbody, "", 1, "Error")
     return 0
   endif
 
@@ -3401,25 +3386,23 @@ function! s:DoWriteBufferStub(flag)
   if AL_hasflag(a:flag, 'quit') || !exists('g:chalice_noquery_write') || !g:chalice_noquery_write
     if force_close
       " 通常の確認
-      let last_confirm = input(s:msg_confirm_appendwrite_yn)
+      let last_confirm = confirm(s:msg_confirm_appendwrite_yn, s:choice_yn, 2, "Question")
       echohl None
-      if last_confirm !~ '^\cy'
-	call s:Redraw('force')
-	call s:EchoH('ErrorMsg', s:msg_error_writeabort)
-	echohl MoreMsg
-	call input(s:msg_prompt_pressenter)
-	echohl None
+      if last_confirm == 1
+      elseif last_confirm == 2
+	call confirm(s:msg_error_writeabort, "", 1, "Error")
 	return -1
       endif
     else
       " 選択肢にキャンセルがある確認
-      let last_confirm = input(s:msg_confirm_appendwrite_ync)
+      let last_confirm = confirm(s:msg_confirm_appendwrite_ync, s:choice_ync, 3, "Question")
       echohl None
-      if last_confirm =~ '^\cn'
+      if last_confirm == 1
+      elseif last_confirm == 2
 	call s:Redraw('force')
 	call s:EchoH('ErrorMsg', s:msg_error_writeabort)
 	return -1
-      elseif last_confirm !~ '^\cy'
+      elseif last_confirm == 3
 	call s:Redraw('force')
 	call s:EchoH('WarningMsg', s:msg_error_writecancel)
 	return 0
