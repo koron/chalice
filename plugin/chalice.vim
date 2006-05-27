@@ -314,7 +314,7 @@ let s:msg_error_writebufbody = '書き込みメッセージが空です.'
 let s:msg_error_writeabort = '書き込みを中止しました.'
 let s:msg_error_writecancel = '書き込みをキャンセルします.'
 let s:msg_error_writetitle = '新スレにはタイトルが必要です.'
-let s:msg_error_writecookie = 'Cookieを焼きました. 内容を確認して再度書き込み直してください.'
+let s:msg_error_writecookie = '書き込もうとしている掲示板の投稿規約を全て承諾する場合にのみ、内容を確認して再度書き込み直してください. 書き込みを行った場合は、自動的にそれらの規約に従うものと見做されます.'
 let s:msg_error_writeerror = '書き込みエラーです.'
 let s:msg_error_writefalse = '書き込めたようですが注意があります.'
 let s:msg_error_writecheck = '書き込めたようですが警告があります.'
@@ -2243,6 +2243,10 @@ endfunction
 "
 " HTTPダウンロードの関数:
 "
+" Param:
+"   host	ホスト名、もしくはURL
+"   remote	リモート名。hostにURLが指定された場合は無視される
+"   flag	'', 'noagent', 'continue', 'flag' またはこれらの組み合わせ
 " Flags:
 "   continue	継続ダウンロードを行なう
 "   head	ヘッダー情報だけを取得する
@@ -2256,7 +2260,11 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
   call s:EchoH('WarningMsg', s:msg_wait_download)
 
   let local = a:localpath
-  let url = s:GenerateHostPathUri(a:host, a:remotepath)
+  if a:host =~ s:mx_anchor_url
+    let url = a:host
+  else
+    let url = s:GenerateHostPathUri(a:host, a:remotepath)
+  endif
   let continued = 0
   let compressed = 0
 
@@ -3093,12 +3101,51 @@ endfunction
 let s:last_username = ''
 let s:last_usermail = ''
 
-function! s:GetWriteTime(url, host, bbs, key)
-  if a:host =~ s:mx_servers_jbbstype
-    return localtime()
+" カレントバッファから
+" <input type=hidden>なnameとvalueをURL形式で取得する
+function! s:GetHiddenInputAsParamsFromBuffer(name_allow, name_deny)
+  let retval = ''
+  let mx = '\m\c<input type="\?hidden"\? name="\?\([^" \t>]*\)"\? value="\?\([^" \t>]*\)"\?'
+  call AL_execute('%s/'.mx.'/\r&/g')
+  call AL_execute('v/'.mx.'/d _')
+  let lnum = 1
+  while lnum <= line('$')
+    let lstr = getline(lnum)
+    let lnum = lnum + 1
+    let name  = AL_sscan(lstr, mx, '\1')
+    let value = AL_sscan(lstr, mx, '\2')
+    if name != '' && (a:name_allow == '' || name =~ a:name_allow) && (a:name_deny == '' || name !~ a:name_deny)
+      let retval = retval . '&'.name.'='.value
+    endif
+  endwhile
+  call AL_execute('undo')
+  call AL_execute('undo')
+  return retval
+endfunction
+
+" URLのコンテンツから
+" <input type=hidden>なnameとvalueをURL形式で取得する
+function! s:GetHiddenInputAsParams(url)
+  let tmp = tempname()
+  call s:HttpDownload(a:url, '', tmp, '')
+  call AL_execute('1vsplit ++enc= '.tmp)
+  call delete(tmp)
+  let retval = s:GetHiddenInputAsParamsFromBuffer('', '')
+  silent! bwipeout!
+  return retval
+endfunction
+
+function! s:GetWriteParams(url, host, bbs, key)
+  " 2chから、書き込みに必要なhiddenパラメータを取得する
+  let params = s:GetHiddenInputAsParams(s:GenerateThreadURL(a:host, a:bbs, a:key, 'onlyone'))
+  if params != ''
+    return params
   else
-    " TODO: Get time from 2ch.
-    return localtime()
+    if a:host =~ s:mx_servers_jbbstype
+      return '&BBS='.a:bbs.'&KEY='.a:key.'&TIME='.localtime()
+    else
+      return '&bbs='.a:bbs.'&key='.a:key.'&time='.localtime()
+    endif
   endif
 endfunction
 
@@ -3203,7 +3250,7 @@ function! s:OpenWriteBuffer(...)
   " 書き込むべきスレのURLを作成しバッファ変数に保存する
   let b:url = 'http://'.host.'/test/read.cgi/'.bbs.'/'.key
   " hiddenなtimeパラメータの生成を、書き込み時ではなくバッファ作成時にする
-  let b:gentime = s:GetWriteTime(b:url, host, bbs, key)
+  let b:write_params = s:GetWriteParams(b:url, host, bbs, key)
 
   call s:Redraw('')
 
@@ -3466,6 +3513,7 @@ function! s:DoWriteBufferStub(flag)
   let retval = 1
   let show_resfile = 0
   let error_msg = ''
+  let new_write_params = ''
   call AL_execute('1vsplit '.resfile)
   let mx = '2ch_X:\(\w\+\)'
   let nr2ch_X = search(mx, 'w')
@@ -3474,8 +3522,15 @@ function! s:DoWriteBufferStub(flag)
   " 結果ファイルを表示するかどうかはshow_resfileで制御する。
   " エラーメッセージを表示する必要がある場合にはerror_msgに設定する。
   if rescode ==# 'cookie'
+    " Cookie確認画面でwrite_paramsを更新する。
     let retval = 0
+    let show_resfile = 1
     let error_msg = s:msg_error_writecookie
+    if wrote_host =~ s:mx_servers_jbbstype
+      let new_write_params = s:GetHiddenInputAsParamsFromBuffer('', '\m^\%(SUBJECT\|NAME\|MAIL\|MESSAGE\)$')
+    else
+      let new_write_params = s:GetHiddenInputAsParamsFromBuffer('', '\m^\%(subject\|FROM\|mail\|MESSAGE\)$')
+    endif
   elseif rescode ==# 'error'
     let retval = 0
     let show_resfile = 1
@@ -3535,6 +3590,9 @@ function! s:DoWriteBufferStub(flag)
   if result !=# 'OK'
     call s:Redraw('force')
     call s:EchoH('ErrorMsg', error_msg)
+    if new_write_params != ''
+      let b:write_params = new_write_params
+    endif
   endif
 
   " 後始末
@@ -3619,13 +3677,16 @@ function! s:CreateWriteChunk_2ch(host, board, key, title, name, mail, message, s
   let chunk = chunk . '&FROM=' . AL_urlencode(a:name)
   let chunk = chunk . '&mail=' . AL_urlencode(a:mail)
   let chunk = chunk . '&MESSAGE=' . AL_urlencode(a:message)
-  let chunk = chunk . '&bbs=' . a:board
+  " bbsとkeyはb:write_paramsとして、取得できているハズなので追加しない
+  "let chunk = chunk . '&bbs=' . a:board
   if !AL_hasflag(flags, 'new')
-    let chunk = chunk . '&key=' . a:key
+    "let chunk = chunk . '&key=' . a:key
   else
     let chunk = chunk . '&subject=' . AL_urlencode(a:title)
   endif
-  let chunk = chunk . '&time=' . (exists('b:gentime') ? b:gentime : localtime())
+  if exists('b:write_params')
+    let chunk = chunk . b:write_params
+  endif
   " SIDがある場合は追加する
   let chunk = s:AddSidToChunk(chunk)
   return chunk
@@ -4333,17 +4394,20 @@ function! s:CreateWriteChunk_JBBS(host, board, key, title, name, mail, message, 
   " jbbs.net, jbbs.shitaraba.com, machibbs.com用の書き込みデータチャンク作成
   let chunk = ''
   let chunk = chunk . 'submit=' . a:submitkey
+  " BBSとKEYはb:write_paramsにより供給されるので、明示的に追加する必要は無い
   if !b:newthread
-    let chunk = chunk . '&KEY=' . b:key
+    "let chunk = chunk . '&KEY=' . b:key
   else
     let chunk = chunk . '&SUBJECT=' . AL_urlencode(a:title)
   endif
   let chunk = chunk . '&NAME=' . AL_urlencode(a:name)
   let chunk = chunk . '&MAIL=' . AL_urlencode(a:mail)
   let chunk = chunk . '&MESSAGE=' . AL_urlencode(a:message)
-  let chunk = chunk . '&BBS=' . b:bbs
+  "let chunk = chunk . '&BBS=' . b:bbs
   if !b:newthread
-    let chunk = chunk . '&TIME=' . (exists('b:gentime') ? b:gentime : localtime())
+    if exists('b:write_params')
+      let chunk = chunk . b:write_params
+    endif
   else
     let chunk = chunk . '&TIME=' . b:key
   endif
