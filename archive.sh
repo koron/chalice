@@ -20,8 +20,8 @@ if [ -e "$pkgname" ] ; then
   exit 1
 fi
 
-if ! svn export "$repouri" "$dirname" ; then
+if ! svn export -q "$repouri" "$dirname" ; then
   exit 1
 fi
-tar cjvf "$pkgname" "$dirname"
+tar cjf "$pkgname" "$dirname"
 rm -rf "$dirname"
