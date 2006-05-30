@@ -436,7 +436,7 @@ function! s:AutocmdInstall()
   endif
   augroup Chalice
     autocmd!
-    execute "autocmd BufDelete " . s:buftitle_write . " call <SID>DoWriteBuffer('closing')"
+    execute "autocmd BufWriteCmd " . s:buftitle_write . " call <SID>DoWriteBuffer('')"
     execute "autocmd BufEnter " . s:buftitle_boardlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_boardlist)|normal! 0"
     execute "autocmd BufEnter " . s:buftitle_threadlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:opened_bookmark?s:msg_help_bookmark : s:msg_help_threadlist)"
     execute "autocmd BufEnter " . s:buftitle_thread . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_thread)"
@@ -3309,7 +3309,7 @@ function! s:DoWriteBuffer(flag)
   elseif write_result != 0
     let s:opened_write = 0
     call s:GoBuf_Write()
-    execute ":close"
+    execute ":close!"
     call s:GoBuf_Thread()
   endif
 

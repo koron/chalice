@@ -19,6 +19,7 @@ setlocal expandtab
 setlocal formatoptions-=r
 setlocal tabstop=4 shiftwidth=4 softtabstop=4
 setlocal nowrap
+setlocal buftype=
 
 nnoremap <buffer> =			:ChaliceCheckThread write<CR>
 " ‘‚İƒRƒ}ƒ“ƒh
