@@ -437,6 +437,7 @@ function! s:AutocmdInstall()
   augroup Chalice
     autocmd!
     execute "autocmd BufWriteCmd " . s:buftitle_write . " call <SID>DoWriteBuffer('')"
+    execute "autocmd BufDelete " . s:buftitle_write . " call <SID>OnCloseWriteBuffer()"
     execute "autocmd BufEnter " . s:buftitle_boardlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_boardlist)|normal! 0"
     execute "autocmd BufEnter " . s:buftitle_threadlist . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:opened_bookmark?s:msg_help_bookmark : s:msg_help_threadlist)"
     execute "autocmd BufEnter " . s:buftitle_thread . " call s:Redraw('force')|call s:EchoH('WarningMsg',s:msg_help_thread)"
@@ -1518,11 +1519,6 @@ function! s:ChaliceClose(flag)
   if !s:opened
     return
   endif
-  call s:AutocmdUninstall()
-  " 書けるバッファあれば書くチャンスを用意する
-  if s:opened_write
-    call s:DoWriteBuffer('closing,quit')
-  endif
   " 必要ならば終了の意思を確認する
   if !g:chalice_noquery_quit && !AL_hasflag(a:flag, 'all')
     if confirm(s:msg_confirm_quit, s:choice_yn, 2, "Question") == 2
@@ -1530,11 +1526,20 @@ function! s:ChaliceClose(flag)
     endif
   endif
 
-  silent! call s:CommandUnregister()
+  " 書き込みバッファを強制終了する. 
+  " 仕様変更: 書き込めるバッファがあっても無視する
+  if s:opened_write
+    call s:GoBuf_Write()
+    silent! close!
+  endif
+
   " ブックマークが開かれていた場合閉じることで保存する
   if s:opened_bookmark
     call s:CloseBookmark()
   endif
+
+  silent! call s:AutocmdUninstall()
+  silent! call s:CommandUnregister()
 
   " 稼働時間を計算
   let timestr = ''
@@ -3269,6 +3274,7 @@ function! s:OpenWriteBuffer(...)
   call AL_append_multilines(def)
   let s:opened_write = 1
   let &undolevels = save_undolevels
+  let &modified = 0
 
   " 書き込みに失敗した文章があれば自動的に追加。
   " なければインサートモード開始。
@@ -3283,6 +3289,10 @@ function! s:OpenWriteBuffer(...)
     normal! G
     startinsert
   endif
+endfunction
+
+function! s:OnCloseWriteBuffer()
+  let s:opened_write = 0
 endfunction
 
 "
