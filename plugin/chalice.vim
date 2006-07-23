@@ -454,6 +454,26 @@ function! s:AutocmdUninstall()
   augroup END
 endfunction
 
+function! s:OnEnterBoardlist()
+  call s:Redraw('force')
+  call s:EchoH('WarningMsg', s:msg_help_boardlist)
+  normal! 0
+endfunction
+
+function! s:OnEnterThreadlist()
+  call s:Redraw('force')
+  if s:opened_bookmark
+    call s:EchoH('WarningMsg', s:msg_help_bookmark)
+  else
+    call s:EchoH('WarningMsg', s:msg_help_threadlist)
+  endif
+endfunction
+
+function! s:OnEnterThread()
+  call s:Redraw('force')
+  call s:EchoH('WarningMsg', s:msg_help_threadlist)
+endfunction
+
 "}}}
 
 "------------------------------------------------------------------------------

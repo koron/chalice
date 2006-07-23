@@ -2,7 +2,7 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 20-Nov-2005.
+" Last Change: 24-Jul-2006.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 let s:version_serial = 135
@@ -54,8 +54,8 @@ function! AL_islastline(...)
   return line('$') == line(a:0 > 0 ? a:1 : '.')
 endfunction
 
-function! AL_selectwindow(window)
-  " Specify window number from buffer name or window number.
+function! AL_get_winnum(window)
+  " Obtain window number from buffer name or window number.
   let num = bufwinnr(a:window)
   if num < 0 && a:window =~ '^\d\+$'
     let num = a:window + 0
@@ -63,6 +63,12 @@ function! AL_selectwindow(window)
       let num = -1
     endif
   endif
+  return num
+endfunction
+
+function! AL_selectwindow(window)
+  " Obtain window number from buffer name or window number.
+  let num = AL_get_winnum(a:window)
   " Activate window
   if num >= 0 && num != winnr()
     call AL_execute(num.'wincmd w')
