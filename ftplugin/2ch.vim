@@ -2,12 +2,12 @@
 "
 " - 2ch viewer 'Chalice' /
 "
-" Last Change: 26-Jul-2002.
 " Written By:  Muraoka Taro <koron@tka.att.ne.jp>
 
 setlocal buftype=nofile bufhidden=delete 
 setlocal noexpandtab
 setlocal nolist
+setlocal nomodeline
 setlocal nonumber
 setlocal noswapfile
 setlocal nowrap
