@@ -254,6 +254,7 @@ Subversion利用について
 
 更新履歴
 ● XX-XXX-XXXX (trunk)
+  HTML整形時にスタイルシートを出力、win32はフォントを指定
   各バッファにnomodelineを設定
   バッファ名からウィンドウ番号を取得する関数を分離(alive.vim)
   複雑なautocmdを直書きから関数へ変更

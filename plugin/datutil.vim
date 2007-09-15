@@ -2,12 +2,11 @@
 "
 " datutil.vim
 "
-" Last Change: 04-Apr-2003.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 scriptencoding cp932
 
-let s:version_serial = 1
+let s:version_serial = 2
 let s:name = 'datutil'
 if exists('g:plugin_'.s:name.'_disable') || (exists('g:version_'.s:name) && g:version_{s:name} > s:version_serial)
   finish
@@ -215,6 +214,15 @@ function! Dat2HTML(dat, startnum, endnum, url_base, url_board)
     let retval = retval.'<base href="'.a:url_base.'">'."\n"
   endif
   let retval = retval.'<title>'.title.'</title>'."\n"
+  " スタイルシート出力
+  if 1
+    let retval = retval."<style type=\"text/css\">\n"
+    " AA用フォント設定
+    if has('win32')
+      let retval = retval."body { font-size:12pt; font-family:\"ＭＳ Ｐゴシック\"; }\n"
+    endif
+    let retval = retval."</style>\n"
+  endif
   let retval = retval.'</head>'."\n"
   let retval = retval.'<body bgcolor="#efefef" text="black" link="blue" alink="red" vlink="#660099">'."\n"
   " リンク(絶対位置指定)
