@@ -1091,7 +1091,7 @@ endfunction
 function! s:DatDownload_2ch(host, remote, local_dat, flags)
   if 1 && has('byte_offset') && AL_hasflag(a:flags, 'continue') && getfsize(a:local_dat) > 0
     " DATの最後の1行が被るようにダウンロードするために、正確なアドレスを測定
-    call AL_execute('1vsplit ++enc= '.a:local_dat)
+    call AL_execute('1vsplit ++enc= ++bad=keep '.a:local_dat)
     let continue_at = line2byte('$') - 1
     let lastline = line('$')
     silent! bwipeout!
@@ -1106,8 +1106,8 @@ function! s:DatDownload_2ch(host, remote, local_dat, flags)
       " 最後の1行が正しく被っているかチェックする
       "	  被っている→DAT更新
       "	  被ってない→ファイルを消して全取得へ
-      call AL_execute('1vsplit ++enc= '.a:local_dat)
-      call AL_execute('$read ++enc= '.tmpfile)
+      call AL_execute('1vsplit ++enc= ++bad=keep '.a:local_dat)
+      call AL_execute('$read ++enc= ++bad=keep '.tmpfile)
       call delete(tmpfile)
       if getline(lastline) ==# getline(lastline + 1)
 	if line('$') > lastline + 1
@@ -4561,7 +4561,7 @@ function! s:GetOfflawDat(host, board, dat, local)
   if !filereadable(a:local)
     return 0
   endif
-  call AL_execute('1vsplit ++enc= '.a:local)
+  call AL_execute('1vsplit ++enc= ++bad=keep '.a:local)
   let result = getline(1)
   normal! gg"_dd
   call AL_write()
