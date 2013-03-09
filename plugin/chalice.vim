@@ -327,7 +327,7 @@ let s:msg_error_nocachedir = 'キャッシュディレクトリを作成出来ません.'
 let s:msg_error_nothread = 'スレッドが存在しないか, 倉庫入り(HTML化)待ちです.'
 let s:msg_error_accesshere = '詳細は下記URLに外部ブラウザでアクセスしてみてください.'
 let s:msg_error_newversion = 'Chaliceの新しいバージョン・パッチがリリースされています.'
-let s:msg_error_doupdate = 'Subversion版を利用している場合はsvn updateで最新版を入手できます.'
+let s:msg_error_doupdate = 'github版を利用している場合はgit pullで最新版を入手できます.'
 let s:msg_error_htmlnotopen = 'スレッドが開かれていません.'
 let s:msg_error_htmlnodat = 'スレッドのdatがありません.'
 let s:msg_error_nodatdirtool = 'DATDIRへの移行ツールが見つかりません. 確認してください.'
@@ -387,11 +387,11 @@ unmap <SID>xx
 let s:scriptdir = expand('<sfile>:p:h')
 
 " バージョンチェック
-let s:verchk_verurl = 'http://www.kaoriya.net/update/chalice-version'
+let s:verchk_verurl = 'https://raw.github.com/koron/chalice/master/VERSION'
 let s:verchk_path = substitute(s:scriptdir, 'plugin$', '', '').'VERSION'
 let s:verchk_interval = 86400
 let s:verchk_url_1 = s:verchk_verurl
-let s:verchk_url_2 = 'http://www.kaoriya.net/#CHALICE'
+let s:verchk_url_2 = 'https://github.com/koron/chalice'
 
 " 起動フラグ
 let s:opened = 0
@@ -624,10 +624,7 @@ function! s:CheckNewVersion(verurl, verpath, vercache, ...)
 
   " バージョン情報ダウンロード
   if !filereadable(a:vercache) || localtime() - getftime(a:vercache) > interval
-    let mx = '^http://\(.*\)/\([^/]*\)$'
-    let host  = AL_sscan(a:verurl, mx, '\1')
-    let rpath = AL_sscan(a:verurl, mx, '\2')
-    call s:HttpDownload(host, rpath, a:vercache, '')
+    call s:HttpDownload(a:verurl, '', a:vercache, '')
   endif
   if !filereadable(a:vercache)
     return 0
@@ -2334,6 +2331,11 @@ function! s:HttpDownload(host, remotepath, localpath, flag)
     let opts = opts . ' -o ' . AL_quote(local)
   endif
   let opts = opts . ' ' . AL_quote(url)
+
+  " https の時は証明書をチェックしないようにする
+  if a:host =~ '^https://'
+    let opts .= ' -k'
+  endif
 
   " ダウンロード実行
   let cmd = s:cmd_curl.' '.opts
