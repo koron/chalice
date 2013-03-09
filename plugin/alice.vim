@@ -2,7 +2,7 @@
 "
 " alice.vim - A vim script library
 "
-" Last Change: 24-Jul-2006.
+" Last Change: 09-Mar-2013.
 " Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
 
 let s:version_serial = 135
@@ -710,9 +710,6 @@ command! -nargs=1 ALexecute		call AL_execute(<args>)
 function! AL_system(cmd)
   " system() wrapper function
   let cmdstr = a:cmd
-  if has('win32') && &shell =~ '\ccmd'
-    let cmdstr = '"' . cmdstr . '"'
-  endif
   return system(cmdstr)
 endfunction
 command! -nargs=1 ALsystem		call AL_system(<args>)
